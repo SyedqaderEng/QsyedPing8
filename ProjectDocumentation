@@ -1,0 +1,224 @@
+latform8 IAM Automation – Complete CI/CD Deployment Guide
+
+This document provides full end-to-end guidance for automating Platform8 IAM deployments (PingAM, PingIDM, PingDirectory, IG, PlatformUI) using Ansible, Vault, and Bitbucket. It covers folder structure, VM layout, required binaries, service accounts, deployment flows, and first vs repeat deployment behavior.
+
+Environment Architecture & VM Layout
+
+Each Ping/ForgRock product is deployed on its own VM for clean separation and reliable CI/CD automation.
+
+Required VMs:
+
+DS-Identity → User identities
+
+DS-Config → AM configuration store
+
+DS-CTS → AM CTS/token store
+
+PingAM VM → Deploy AM WAR + Amster configuration
+
+PingIDM VM → Deploy IDM ZIP
+
+IG Gateway VM → Optional gateway routing
+
+Platform UI VM → Optional UI portal
+
+Optional: DR / Replicated Environment
+
+Duplicate all above VMs in secondary DC.
+
+Required Service Accounts
+
+Account | Purpose
+svc_ansible | SSH access for automation
+svc_vault_reader | Pull machine-only secrets from Vault
+svc_ds_admin | DS root admin
+svc_am_admin | PingAM bootstrap + config admin
+svc_idm_admin | IDM bootstrap admin
+
+All secrets are stored ONLY in Vault (not git, not Playbooks). Vault is for automation secrets; user-facing secrets go to Secret Server.
+
+Required Tools, Binaries & Config Utilities
+
+System Tools (Ansible Controller Node):
+
+Amster CLI (PingAM config automation)
+
+IDM openidm-cli
+
+DS tools: dscreate, dsconfig, dsbackup, dsreplication
+
+curl, jq, tar, unzip
+
+Product Binaries (Downloaded from Backstage / Nexus / Bitbucket LFS):
+
+pingAM-8.x.war
+
+pingIDM-8.x.zip
+
+pingDS-8.x.zip
+
+IG-8.x.zip
+
+Platform UI bundle (optional)
+
+Place binaries in a shared artifacts directory or pull via pipeline.
+
+Final Standard Ansible Folder Structure
+
+platform8-automation/
+├── inventories/ (dev, qa, prod)
+├── playbooks/ (deploy_ds.yml, deploy_openam.yml, deploy_idm.yml, deploy_ig.yml, deploy_platform_ui.yml)
+├── roles/ (ds, openam, idm, gateway, platform_ui)
+├── templates/ (openam-config.json.j2, idm-config.json.j2, ig-routes.json.j2)
+└── vault/ secrets.yml
+
+Meaning:
+
+inventories → host groups, IPs, environment-specific vars
+
+playbooks → top-level orchestrators
+
+roles → reusable logic per product
+
+templates → Jinja templates for configuration files
+
+vault → encrypted machine-only secrets
+
+Playbooks (What Each One Does)
+
+deploy_ds.yml
+
+Deploys PingDirectory on 3 VMs (Identity, Config, CTS)
+
+Creates base topology
+
+Applies JVM options, indexes, replication
+
+Idempotent: skips re-initialization if DS already exists
+
+deploy_openam.yml
+
+Deploy PingAM WAR to Tomcat/Jetty
+
+Runs Amster import using JSON templates
+
+Supports incremental changes
+
+Never wipes realms or policies unless declared
+
+deploy_idm.yml
+
+Installs IDM ZIP structure
+
+Deploys DS-backed repo config
+
+Loads mapping, sync, schedule configs
+
+Redeploy = merge, not overwrite
+
+deploy_ig.yml
+
+Installs IG
+
+Deploys routes using templates
+
+Reloads changed routes only
+
+deploy_platform_ui.yml
+
+Installs UI bundle
+
+Configures environment endpoints
+
+First Deployment vs Second Deployment Behavior
+
+First-Time Deployment (Bootstrap):
+
+DS instances created fresh
+
+AM WAR deployed and started
+
+Amster loads initial config: Global settings, /root realm, default auth chain, AM Admin user
+
+IDM base config loaded
+
+IG base routes installed
+
+Second Deployment (Incremental):
+
+DS data preserved
+
+Realms preserved
+
+Policies preserved
+
+Agents preserved
+
+New config merged
+
+Objects are not removed unless explicitly declared in JSON
+
+Examples:
+
+If you created a new AM realm manually, redeployment keeps it.
+
+Adding new JSON config (policy/agent) will merge into existing config.
+
+DS topology or user data never reset unless explicitly requested.
+
+CI/CD Flow (Bitbucket → Ansible → Vault → VMs)
+
+Developer pushes change → Bitbucket
+
+Bitbucket Pipeline triggers: pulls Ansible repo, authenticates to Vault, retrieves secrets, runs appropriate playbook (deploy_ds.yml, deploy_openam.yml, deploy_idm.yml)
+
+Ansible connects to VMs over SSH
+
+Product deployed + configured
+
+Status & logs pushed back to Bitbucket
+
+Practical Deployment Flow (Example)
+
+Step 1 – Deploy DS:
+ansible-playbook playbooks/deploy_ds.yml -i inventories/dev
+
+Step 2 – Deploy AM:
+ansible-playbook playbooks/deploy_openam.yml -i inventories/dev
+
+Step 3 – Deploy IDM:
+ansible-playbook playbooks/deploy_idm.yml -i inventories/dev
+
+This order matches real-world Platform8 build requirements.
+
+What You Must Push Into Bitbucket
+
+All Ansible roles
+
+All playbooks
+
+Templates (Jinja JSON files)
+
+Pipeline YAML (bitbucket-pipelines.yml)
+
+Artifacts version manifest (not the binaries unless LFS)
+
+Inventory structure (dev/qa/prod)
+
+Summary
+
+This design gives you:
+
+One-click CI/CD for full Platform8
+
+Automated DS, AM, IDM deployments
+
+Incremental, non-destructive redeploys
+
+Environment-specific automation using inventories
+
+Secure secret retrieval from Vault
+
+Modular Ansible roles for each product
+
+Ability to run manually or via Bitbucket Automation
