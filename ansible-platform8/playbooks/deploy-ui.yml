@@ -1,0 +1,51 @@
+---
+# Deploy Platform UI Playbook
+
+- name: Deploy Platform UI
+  hosts: platform_ui
+  become: yes
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Include common role for prerequisites
+      include_role:
+        name: common
+
+    - name: Verify AM is running
+      uri:
+        url: "{{ am_url }}/json/serverinfo/*"
+        method: GET
+      delegate_to: localhost
+      failed_when: false
+      changed_when: false
+
+    - name: Verify IDM is running
+      uri:
+        url: "http://{{ idm_hostname }}:{{ boot_port_http }}/openidm/info/ping"
+        method: GET
+      delegate_to: localhost
+      failed_when: false
+      changed_when: false
+
+    - name: Verify IG is running
+      uri:
+        url: "http://{{ ig_hostname }}:{{ ig_http_port }}/openig/ping"
+        method: GET
+      delegate_to: localhost
+      failed_when: false
+      changed_when: false
+
+  roles:
+    - role: tomcat
+      tags:
+        - tomcat
+    - role: platform-ui
+      tags:
+        - ui
+        - platform-ui
+
+  post_tasks:
+    - name: Display deployment summary
+      debug:
+        msg: "Platform UI deployment completed. Access URLs: Platform UI: https://{{ platform_hostname }}:{{ ig_https_port }}/platform-ui/, End-user UI: https://{{ platform_hostname }}:{{ ig_https_port }}/enduser-ui/"
+

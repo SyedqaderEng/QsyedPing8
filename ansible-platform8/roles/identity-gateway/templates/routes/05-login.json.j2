@@ -1,0 +1,14 @@
+{
+  "handler": {
+    "type": "StaticResponseHandler",
+    "config": {
+      "status": 200,
+      "headers": {
+        "Content-Type": ["text/html"]
+      },
+      "entity": "<html><body>Login UI</body></html>"
+    }
+  },
+  "condition": "${matches(request.uri.path, '^/login-ui')}"
+}
+

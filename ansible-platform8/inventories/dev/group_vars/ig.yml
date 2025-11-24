@@ -1,0 +1,24 @@
+---
+# Identity Gateway (IG) Configuration - Dev Environment
+
+# IG Ports
+ig_http_port: 7080
+ig_https_port: 9443
+
+# IG Route Files
+ig_route_files:
+  - "01-am.json"
+  - "02-idm.json"
+  - "03-platform.json"
+  - "04-enduser.json"
+  - "05-login.json"
+
+# IG Configuration Files
+ig_config_files:
+  - "config.json"
+  - "admin.json"
+  - "logback.xml"
+
+# IG Keystore
+# ig_keystore_password: Retrieved from Vault at platform8/dev/ig/keystore_password
+

@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform8 IAM Complete Architecture Documentation</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        /* Tab Navigation */
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 3px solid #3498db;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+            padding: 10px 10px 0 10px;
+        }
+
+        .tab-button {
+            background: #e9ecef;
+            border: none;
+            padding: 15px 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #495057;
+            border-radius: 8px 8px 0 0;
+            margin-right: 5px;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-button:hover {
+            background: #dee2e6;
+            color: #212529;
+        }
+
+        .tab-button.active {
+            background: white;
+            color: #3498db;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .diagram-container {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            min-height: 600px;
+        }
+
+        .legend {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .legend h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+
+        .legend-item.config-store { border-left-color: #3498db; }
+        .legend-item.cts-store { border-left-color: #9b59b6; }
+        .legend-item.idrepo-store { border-left-color: #e74c3c; }
+        .legend-item.am { border-left-color: #2ecc71; }
+        .legend-item.idm { border-left-color: #f39c12; }
+        .legend-item.ig { border-left-color: #1abc9c; }
+        .legend-item.ui { border-left-color: #e67e22; }
+
+        .description {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .description h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .description-section {
+            margin-bottom: 25px;
+        }
+
+        .description-section h3 {
+            color: #34495e;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .description-section ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .description-section li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .arrow-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .arrow-note strong {
+            color: #856404;
+        }
+
+        .diagram-title {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Platform8 IAM Complete Architecture</h1>
+        <p class="subtitle">Master Architecture and Component Sub-Architectures</p>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('master')">Master Architecture</button>
+            <button class="tab-button" onclick="showTab('ds')">DS Sub-Architecture</button>
+            <button class="tab-button" onclick="showTab('am')">AM Sub-Architecture</button>
+            <button class="tab-button" onclick="showTab('idm')">IDM Sub-Architecture</button>
+            <button class="tab-button" onclick="showTab('ig')">IG Sub-Architecture</button>
+            <button class="tab-button" onclick="showTab('ui')">Platform UI Sub-Architecture</button>
+        </div>
+
+        <!-- Master Architecture Tab -->
+        <div id="master" class="tab-content active">
+            <h2 class="diagram-title">Master Architecture Diagram</h2>
+            <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px;">
+                High-level overview of all Platform8 IAM components, their VMs, dependencies, and data flows
+            </p>
+
+            <div class="legend">
+                <h2>Component Legend</h2>
+                <div class="legend-items">
+                    <div class="legend-item config-store"><strong>DS Config:</strong> Configuration Store</div>
+                    <div class="legend-item cts-store"><strong>DS CTS:</strong> Core Token Service</div>
+                    <div class="legend-item idrepo-store"><strong>DS IDRepo:</strong> Identity Repository</div>
+                    <div class="legend-item am"><strong>AM:</strong> Access Management</div>
+                    <div class="legend-item idm"><strong>IDM:</strong> Identity Management</div>
+                    <div class="legend-item ig"><strong>IG:</strong> Identity Gateway</div>
+                    <div class="legend-item ui"><strong>UI:</strong> Platform UI</div>
+                </div>
+            </div>
+
+            <div class="diagram-container">
+                <div class="mermaid" id="master-diagram">
+graph TB
+    subgraph "VM 1: Directory Services Cluster"
+        DS_CONFIG["DS Config Store<br/>Port: 3389/3636<br/>Role: AM Configuration"]
+        DS_CTS["DS CTS Store<br/>Port: 1389/1636<br/>Role: Token Storage"]
+        DS_IDREPO["DS IDRepo Store<br/>Port: 2389/2636<br/>Role: User Identities"]
+        
+        DS_CONFIG -.->|"Replication"| DS_CONFIG_REPLICA["DS Config Replica<br/>(Optional DR)"]
+        DS_CTS -.->|"Replication"| DS_CTS_REPLICA["DS CTS Replica<br/>(Optional DR)"]
+        DS_IDREPO -.->|"Replication"| DS_IDREPO_REPLICA["DS IDRepo Replica<br/>(Optional DR)"]
+    end
+
+    subgraph "VM 2: Access Management"
+        AM["PingAM<br/>Port: 8081<br/>Tomcat + AM WAR<br/>Role: AuthN/AuthZ"]
+        AMSTER["Amster<br/>Configuration Tool"]
+    end
+
+    subgraph "VM 3: Identity Management"
+        IDM["PingIDM<br/>Port: 8080/8553<br/>Role: Identity Lifecycle"]
+    end
+
+    subgraph "VM 4: Identity Gateway"
+        IG["Identity Gateway<br/>Port: 7080/9443<br/>Role: API Gateway/Proxy"]
+    end
+
+    subgraph "VM 5: Platform UI"
+        UI["Platform UI<br/>Deployed in Tomcat<br/>Role: Web Interfaces"]
+    end
+
+    %% DS to AM connections
+    DS_CONFIG -->|"Config Data<br/>(LDAPS)"| AM
+    DS_IDREPO -->|"User Store<br/>(LDAPS)"| AM
+    DS_CTS -->|"Token Storage<br/>(LDAPS)"| AM
+    AMSTER -->|"Config Import"| AM
+
+    %% DS to IDM connections
+    DS_IDREPO -->|"User Repository<br/>(LDAPS)"| IDM
+
+    %% AM to IDM connections
+    AM -->|"Authentication<br/>(OAuth2/OIDC)"| IDM
+
+    %% AM/IDM to IG connections
+    AM -->|"Auth Services<br/>(HTTP/HTTPS)"| IG
+    IDM -->|"Identity APIs<br/>(HTTP/HTTPS)"| IG
+
+    %% IG to UI connections
+    IG -->|"Routed Traffic<br/>(HTTPS)"| UI
+
+    %% External access
+    USERS["End Users"] -->|"HTTPS:9443"| IG
+    ADMINS["Administrators"] -->|"HTTPS:9443"| IG
+    CLIENTS["Applications"] -->|"OAuth2/OIDC"| AM
+
+    %% Styling
+    classDef dsConfig fill:#3498db,stroke:#2980b9,stroke-width:3px,color:#fff
+    classDef dsCts fill:#9b59b6,stroke:#8e44ad,stroke-width:3px,color:#fff
+    classDef dsIdrepo fill:#e74c3c,stroke:#c0392b,stroke-width:3px,color:#fff
+    classDef am fill:#2ecc71,stroke:#27ae60,stroke-width:3px,color:#fff
+    classDef idm fill:#f39c12,stroke:#e67e22,stroke-width:3px,color:#fff
+    classDef ig fill:#1abc9c,stroke:#16a085,stroke-width:3px,color:#fff
+    classDef ui fill:#e67e22,stroke:#d35400,stroke-width:3px,color:#fff
+    classDef external fill:#95a5a6,stroke:#7f8c8d,stroke-width:2px,color:#fff
+    classDef replica fill:#ecf0f1,stroke:#bdc3c7,stroke-width:2px,stroke-dasharray:5,5,color:#2c3e50
+
+    class DS_CONFIG,DS_CONFIG_REPLICA dsConfig
+    class DS_CTS,DS_CTS_REPLICA dsCts
+    class DS_IDREPO,DS_IDREPO_REPLICA dsIdrepo
+    class AM,AMSTER am
+    class IDM idm
+    class IG ig
+    class UI ui
+    class USERS,ADMINS,CLIENTS external
+                </div>
+            </div>
+
+            <div class="arrow-note">
+                <strong>Arrow Legend:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li><strong>Solid arrows (→):</strong> Primary data flow and dependencies</li>
+                    <li><strong>Dashed arrows (-.->):</strong> Replication topology (optional DR setup)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- DS Sub-Architecture Tab -->
+        <div id="ds" class="tab-content">
+            <h2 class="diagram-title">Directory Services (DS) Sub-Architecture</h2>
+            <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px;">
+                Detailed view of DS instances, replication topology, and internal dependencies
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid" id="ds-diagram">
+graph TB
+    subgraph "DS Config Store Instance"
+        CONFIG_SETUP["DS Setup<br/>Profile: am-config<br/>Port: 3389/3636"]
+        CONFIG_DATA["Configuration Data<br/>ou=am-config<br/>Realms, Policies, Trees"]
+        CONFIG_ADMIN["Admin DN<br/>uid=am-config,ou=admins"]
+        CONFIG_CERT["CA Certificate<br/>ds-config-ca-cert.pem"]
+    end
+
+    subgraph "DS CTS Store Instance"
+        CTS_SETUP["DS Setup<br/>Profile: am-cts<br/>Port: 1389/1636"]
+        CTS_DATA["Token Data<br/>ou=famrecords,ou=openam-session<br/>OAuth2, SAML, Sessions"]
+        CTS_ADMIN["Admin DN<br/>uid=openam_cts,ou=admins"]
+        CTS_CERT["CA Certificate<br/>ds-cts-ca-cert.pem"]
+    end
+
+    subgraph "DS IDRepo Store Instance"
+        IDREPO_SETUP["DS Setup<br/>Profile: am-identity-store<br/>Port: 2389/2636"]
+        IDREPO_DATA["Identity Data<br/>ou=identities<br/>Users, Groups, Attributes"]
+        IDREPO_ADMIN["Admin DN<br/>uid=am-identity-bind-account"]
+        IDREPO_CERT["CA Certificate<br/>ds-repo-ca-cert.pem"]
+        IDM_REPO["IDM Repository<br/>dc=openidm,dc=forgerock,dc=com"]
+    end
+
+    subgraph "Replication Topology"
+        CONFIG_REPLICA["Config Replica<br/>(DR Site)"]
+        CTS_REPLICA["CTS Replica<br/>(DR Site)"]
+        IDREPO_REPLICA["IDRepo Replica<br/>(DR Site)"]
+    end
+
+    subgraph "Certificate Management"
+        TRUSTSTORE["AM Truststore<br/>Java Keystore<br/>Contains all DS CA certs"]
+    end
+
+    %% Setup to Data
+    CONFIG_SETUP --> CONFIG_DATA
+    CTS_SETUP --> CTS_DATA
+    IDREPO_SETUP --> IDREPO_DATA
+    IDREPO_SETUP --> IDM_REPO
+
+    %% Admin connections
+    CONFIG_SETUP --> CONFIG_ADMIN
+    CTS_SETUP --> CTS_ADMIN
+    IDREPO_SETUP --> IDREPO_ADMIN
+
+    %% Certificate export
+    CONFIG_SETUP --> CONFIG_CERT
+    CTS_SETUP --> CTS_CERT
+    IDREPO_SETUP --> IDREPO_CERT
+
+    %% Certificates to truststore
+    CONFIG_CERT --> TRUSTSTORE
+    CTS_CERT --> TRUSTSTORE
+    IDREPO_CERT --> TRUSTSTORE
+
+    %% Replication
+    CONFIG_DATA -.->|"Multi-Master<br/>Replication"| CONFIG_REPLICA
+    CTS_DATA -.->|"Multi-Master<br/>Replication"| CTS_REPLICA
+    IDREPO_DATA -.->|"Multi-Master<br/>Replication"| IDREPO_REPLICA
+
+    %% External connections
+    AM_CONFIG["AM Config<br/>Connection"] -->|"LDAPS:3636"| CONFIG_DATA
+    AM_IDREPO["AM User Store<br/>Connection"] -->|"LDAPS:2636"| IDREPO_DATA
+    AM_CTS["AM CTS<br/>Connection"] -->|"LDAPS:1636"| CTS_DATA
+    IDM_REPO_CONN["IDM Repository<br/>Connection"] -->|"LDAPS:2636<br/>StartTLS"| IDM_REPO
+
+    %% Styling
+    classDef config fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef cts fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    classDef idrepo fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff
+    classDef replica fill:#ecf0f1,stroke:#bdc3c7,stroke-width:2px,stroke-dasharray:5,5,color:#2c3e50
+    classDef cert fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef external fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+
+    class CONFIG_SETUP,CONFIG_DATA,CONFIG_ADMIN,CONFIG_CERT config
+    class CTS_SETUP,CTS_DATA,CTS_ADMIN,CTS_CERT cts
+    class IDREPO_SETUP,IDREPO_DATA,IDREPO_ADMIN,IDREPO_CERT,IDM_REPO idrepo
+    class CONFIG_REPLICA,CTS_REPLICA,IDREPO_REPLICA replica
+    class TRUSTSTORE cert
+    class AM_CONFIG,AM_IDREPO,AM_CTS,IDM_REPO_CONN external
+                </div>
+            </div>
+
+            <div class="description">
+                <h2>DS Sub-Architecture Details</h2>
+                <div class="description-section">
+                    <h3>Config Store Instance</h3>
+                    <ul>
+                        <li><strong>Setup:</strong> Uses am-config profile, listens on LDAP port 3389, LDAPS port 3636</li>
+                        <li><strong>Data Structure:</strong> Root suffix ou=am-config containing AM configuration data</li>
+                        <li><strong>Content:</strong> Realms, authentication trees, policies, OAuth2 clients, SAML entities</li>
+                        <li><strong>Admin Account:</strong> uid=am-config,ou=admins,ou=am-config</li>
+                        <li><strong>Certificate:</strong> Exports CA certificate for AM truststore import</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>CTS Store Instance</h3>
+                    <ul>
+                        <li><strong>Setup:</strong> Uses am-cts profile, listens on LDAP port 1389, LDAPS port 1636</li>
+                        <li><strong>Data Structure:</strong> Root suffix ou=famrecords,ou=openam-session,ou=tokens</li>
+                        <li><strong>Content:</strong> OAuth2 tokens, SAML assertions, session data, token expiration metadata</li>
+                        <li><strong>Admin Account:</strong> uid=openam_cts,ou=admins,ou=famrecords,ou=openam-session,ou=tokens</li>
+                        <li><strong>Token Policy:</strong> Configured for am-sessions-only expiration policy</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>IDRepo Store Instance</h3>
+                    <ul>
+                        <li><strong>Setup:</strong> Uses am-identity-store profile, listens on LDAP port 2389, LDAPS port 2636</li>
+                        <li><strong>Data Structure:</strong> Root suffix ou=identities for AM users, plus IDM repository structure</li>
+                        <li><strong>Content:</strong> User accounts, groups, attributes, password hashes, IDM managed objects</li>
+                        <li><strong>Admin Account:</strong> uid=am-identity-bind-account,ou=admins,ou=identities</li>
+                        <li><strong>IDM Repository:</strong> Additional structure at dc=openidm,dc=forgerock,dc=com for IDM data</li>
+                        <li><strong>StartTLS:</strong> Enabled for secure connections</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Replication Topology</h3>
+                    <ul>
+                        <li><strong>Type:</strong> Multi-master replication for high availability</li>
+                        <li><strong>Purpose:</strong> Disaster recovery, load distribution, data redundancy</li>
+                        <li><strong>Configuration:</strong> Each instance can have one or more replicas</li>
+                        <li><strong>Sync:</strong> Real-time synchronization of data changes</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Certificate Management</h3>
+                    <ul>
+                        <li><strong>CA Certificates:</strong> Each DS instance exports its CA certificate</li>
+                        <li><strong>Truststore:</strong> All DS CA certificates imported into AM Java truststore</li>
+                        <li><strong>Purpose:</strong> Enables SSL/TLS trust between AM and DS instances</li>
+                        <li><strong>Location:</strong> AM truststore at ~/openam/security/keystores/truststore</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- AM Sub-Architecture Tab -->
+        <div id="am" class="tab-content">
+            <h2 class="diagram-title">Access Management (AM) Sub-Architecture</h2>
+            <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px;">
+                Detailed view of AM deployment, Amster configuration, realms, and DS connections
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid" id="am-diagram">
+graph TB
+    subgraph "Tomcat Container"
+        TOMCAT["Apache Tomcat 10.x<br/>Port: 8081<br/>Systemd Service"]
+        AM_WAR["AM WAR File<br/>AM-8.0.1.war<br/>Context: /am"]
+        SETENV["setenv.sh<br/>CATALINA_OPTS<br/>Truststore Config"]
+    end
+
+    subgraph "AM Configuration"
+        AM_DIR["AM Directory<br/>~/openam<br/>Runtime Data"]
+        AM_CFG["AM Config Dir<br/>~/.openamcfg<br/>Bootstrap Config"]
+        AM_FBC["AM FBC Dir<br/>~/am<br/>(FBC Mode Only)"]
+    end
+
+    subgraph "Amster Configuration Tool"
+        AMSTER_ZIP["Amster ZIP<br/>Amster-8.0.1.zip"]
+        AMSTER_DIR["Amster Directory<br/>Extracted Binary"]
+        AMSTER_KEYS["Amster Keys<br/>SSH Key Pair<br/>amster_rsa"]
+        JOURNEYS["Auth Trees/Nodes<br/>am/root/ directory<br/>JSON Config Files"]
+    end
+
+    subgraph "AM Data Stores"
+        AM_CONFIG_STORE["Config Store<br/>LDAPS:3636<br/>Read/Write Config"]
+        AM_USER_STORE["User Store<br/>LDAPS:2636<br/>Read Users"]
+        AM_CTS_STORE["CTS Store<br/>LDAPS:1636<br/>Read/Write Tokens"]
+    end
+
+    subgraph "AM Realms & Configuration"
+        ROOT_REALM["Root Realm<br/>/ (default)"]
+        ALPHA_REALM["Alpha Realm<br/>/alpha<br/>(Custom)"]
+        AUTH_TREES["Auth Trees<br/>PlatformLogin<br/>PlatformRegistration<br/>etc."]
+        OAUTH_CLIENTS["OAuth2 Clients<br/>OIDC Providers"]
+    end
+
+    subgraph "AM REST API"
+        REST_API["REST Endpoints<br/>/json/realms/...<br/>/json/authenticate"]
+        REST_CONFIG["REST Configuration<br/>configure_am.sh<br/>Postman Collection"]
+    end
+
+    %% Deployment flow
+    AM_WAR --> TOMCAT
+    SETENV --> TOMCAT
+    TOMCAT --> AM_DIR
+    TOMCAT --> AM_CFG
+
+    %% Amster setup
+    AMSTER_ZIP --> AMSTER_DIR
+    AMSTER_DIR --> AMSTER_KEYS
+    AMSTER_DIR -->|"import-config"| JOURNEYS
+
+    %% Amster to AM
+    AMSTER_DIR -->|"install-openam"| AM_DIR
+    AMSTER_DIR -->|"create Realms"| ALPHA_REALM
+    AMSTER_DIR -->|"import-config"| AUTH_TREES
+
+    %% AM to DS connections
+    AM_DIR -->|"Read Config"| AM_CONFIG_STORE
+    AM_DIR -->|"Read Users"| AM_USER_STORE
+    AM_DIR -->|"Read/Write Tokens"| AM_CTS_STORE
+
+    %% Realm structure
+    ROOT_REALM --> ALPHA_REALM
+    ALPHA_REALM --> AUTH_TREES
+    ALPHA_REALM --> OAUTH_CLIENTS
+
+    %% REST API
+    TOMCAT --> REST_API
+    REST_CONFIG --> REST_API
+    REST_API --> AM_DIR
+
+    %% FBC mode
+    AM_FBC -.->|"FBC Mode<br/>(Alternative)"| AM_DIR
+
+    %% Styling
+    classDef tomcat fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef am fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef amster fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef ds fill:#95a5a6,stroke:#7f8c8d,stroke-width:2px,color:#fff
+    classDef config fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef fbc fill:#ecf0f1,stroke:#bdc3c7,stroke-width:2px,stroke-dasharray:5,5,color:#2c3e50
+
+    class TOMCAT,AM_WAR,SETENV tomcat
+    class AM_DIR,AM_CFG,ROOT_REALM,ALPHA_REALM,AUTH_TREES,OAUTH_CLIENTS,REST_API am
+    class AMSTER_ZIP,AMSTER_DIR,AMSTER_KEYS,JOURNEYS amster
+    class AM_CONFIG_STORE,AM_USER_STORE,AM_CTS_STORE ds
+    class REST_CONFIG config
+    class AM_FBC fbc
+                </div>
+            </div>
+
+            <div class="description">
+                <h2>AM Sub-Architecture Details</h2>
+                <div class="description-section">
+                    <h3>Tomcat Deployment</h3>
+                    <ul>
+                        <li><strong>Container:</strong> Apache Tomcat 10.x pre-installed and managed via systemd</li>
+                        <li><strong>WAR Deployment:</strong> AM-8.0.1.war deployed to webapps/am/ directory</li>
+                        <li><strong>Context Path:</strong> /am (configurable via AM_CONTEXT variable)</li>
+                        <li><strong>Port:</strong> HTTP port 8081 (configurable via TOMCAT_HTTP_PORT)</li>
+                        <li><strong>setenv.sh:</strong> Configures CATALINA_OPTS with truststore path and DS connection parameters</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Deployment Modes</h3>
+                    <ul>
+                        <li><strong>DS-Based Mode:</strong> Configuration stored in DS Config Store (default)</li>
+                        <li><strong>FBC Mode:</strong> File-Based Configuration, uses ~/am directory instead of DS</li>
+                        <li><strong>FBC setenv.sh:</strong> Different CATALINA_OPTS with file-based configuration flags</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Amster Configuration Tool</h3>
+                    <ul>
+                        <li><strong>Purpose:</strong> Command-line tool for AM configuration automation</li>
+                        <li><strong>Installation:</strong> Extracted from Amster-8.0.1.zip</li>
+                        <li><strong>Initial Setup:</strong> Uses install-openam command to bootstrap AM</li>
+                        <li><strong>SSH Keys:</strong> Generates amster_rsa key pair for secure AM connection</li>
+                        <li><strong>Config Import:</strong> Imports authentication trees and nodes from am/root/ directory</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Data Store Connections</h3>
+                    <ul>
+                        <li><strong>Config Store:</strong> LDAPS connection to DS Config (port 3636) for reading/writing AM configuration</li>
+                        <li><strong>User Store:</strong> LDAPS connection to DS IDRepo (port 2636) for user authentication and lookup</li>
+                        <li><strong>CTS Store:</strong> LDAPS connection to DS CTS (port 1636) for token and session storage</li>
+                        <li><strong>Truststore:</strong> Java truststore contains all DS CA certificates for SSL trust</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Realms and Authentication</h3>
+                    <ul>
+                        <li><strong>Root Realm:</strong> Default realm at / containing system-wide configuration</li>
+                        <li><strong>Alpha Realm:</strong> Custom realm at /alpha for application-specific configuration</li>
+                        <li><strong>Auth Trees:</strong> Authentication journeys (PlatformLogin, PlatformRegistration, etc.)</li>
+                        <li><strong>OAuth2/OIDC:</strong> OAuth2 clients and OpenID Connect providers configured per realm</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>REST API Configuration</h3>
+                    <ul>
+                        <li><strong>Endpoints:</strong> RESTful API at /am/json/realms/... for configuration and authentication</li>
+                        <li><strong>Configuration Script:</strong> configure_am.sh executes REST API calls for post-deployment setup</li>
+                        <li><strong>Authentication:</strong> Uses Admin SSO token (iPlanetDirectoryPro cookie) for API access</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- IDM Sub-Architecture Tab -->
+        <div id="idm" class="tab-content">
+            <h2 class="diagram-title">Identity Management (IDM) Sub-Architecture</h2>
+            <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px;">
+                Detailed view of IDM deployment, JSON configuration structure, and connections to DS and AM
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid" id="idm-diagram">
+graph TB
+    subgraph "IDM Deployment"
+        IDM_ZIP["IDM ZIP<br/>IDM-8.0.0.zip"]
+        IDM_EXTRACT["Extracted IDM<br/>/opt/ping/openidm"]
+        IDM_STARTUP["startup.sh<br/>Java Process"]
+        IDM_SHUTDOWN["shutdown.sh<br/>Graceful Stop"]
+    end
+
+    subgraph "IDM Configuration Files"
+        REPO_DS["repo.ds.json<br/>DS Repository Config<br/>LDAP Connection"]
+        ACCESS_JSON["access.json<br/>Authorization Rules"]
+        MANAGED_JSON["managed.json<br/>Managed Objects<br/>Schema Definitions"]
+        AUTH_JSON["authentication.json<br/>Auth Module Config"]
+        METRICS_JSON["metrics.json<br/>Metrics Collection"]
+        UI_CONFIG["ui-configuration.json<br/>UI Settings"]
+        UI_THEME["ui-themerealm.json<br/>Theme Configuration"]
+        CORS_JSON["servletfilter-cors.json<br/>CORS Policy"]
+        BOOT_PROPS["boot.properties<br/>HTTP/HTTPS Ports<br/>Host Configuration"]
+    end
+
+    subgraph "IDM Security"
+        IDM_TRUSTSTORE["IDM Truststore<br/>security/truststore<br/>JKS Format"]
+        IDM_STOREPASS["storepass File<br/>Truststore Password"]
+        DS_CERT["DS CA Certificate<br/>ds-repo-ca-cert.pem<br/>Imported to Truststore"]
+    end
+
+    subgraph "DS Repository Connection"
+        DS_IDREPO["DS IDRepo<br/>LDAPS:2636<br/>StartTLS Enabled"]
+        DS_ADMIN["DS Admin DN<br/>cn=Directory Manager"]
+        IDM_REPO_DATA["IDM Repository Data<br/>dc=openidm,dc=forgerock,dc=com<br/>Managed Objects"]
+    end
+
+    subgraph "AM Integration"
+        AM_AUTH["AM Authentication<br/>OAuth2/OIDC<br/>Token Validation"]
+        AM_URL["AM URL<br/>http://am.example.com:8081/am"]
+    end
+
+    subgraph "IDM Services"
+        IDM_REST["IDM REST API<br/>/openidm/*<br/>Port: 8080/8553"]
+        IDM_ADMIN["Admin Console<br/>/admin<br/>Port: 8080/8553"]
+        IDM_MANAGED["Managed Objects<br/>/openidm/managed/*"]
+        IDM_SYNC["Sync Engine<br/>Reconciliation"]
+    end
+
+    %% Deployment flow
+    IDM_ZIP --> IDM_EXTRACT
+    IDM_EXTRACT --> IDM_STARTUP
+    IDM_EXTRACT --> IDM_SHUTDOWN
+
+    %% Configuration files
+    IDM_EXTRACT --> REPO_DS
+    IDM_EXTRACT --> ACCESS_JSON
+    IDM_EXTRACT --> MANAGED_JSON
+    IDM_EXTRACT --> AUTH_JSON
+    IDM_EXTRACT --> METRICS_JSON
+    IDM_EXTRACT --> UI_CONFIG
+    IDM_EXTRACT --> UI_THEME
+    IDM_EXTRACT --> CORS_JSON
+    IDM_EXTRACT --> BOOT_PROPS
+
+    %% Security setup
+    DS_CERT --> IDM_TRUSTSTORE
+    IDM_STOREPASS --> IDM_TRUSTSTORE
+    IDM_TRUSTSTORE --> IDM_EXTRACT
+
+    %% DS connection
+    REPO_DS --> DS_IDREPO
+    REPO_DS --> DS_ADMIN
+    DS_IDREPO --> IDM_REPO_DATA
+
+    %% AM integration
+    AUTH_JSON --> AM_AUTH
+    AM_AUTH --> AM_URL
+
+    %% Services
+    IDM_STARTUP --> IDM_REST
+    IDM_STARTUP --> IDM_ADMIN
+    IDM_STARTUP --> IDM_MANAGED
+    IDM_STARTUP --> IDM_SYNC
+
+    %% Styling
+    classDef idm fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef config fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef security fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    classDef ds fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff
+    classDef am fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef service fill:#1abc9c,stroke:#16a085,stroke-width:2px,color:#fff
+
+    class IDM_ZIP,IDM_EXTRACT,IDM_STARTUP,IDM_SHUTDOWN idm
+    class REPO_DS,ACCESS_JSON,MANAGED_JSON,AUTH_JSON,METRICS_JSON,UI_CONFIG,UI_THEME,CORS_JSON,BOOT_PROPS config
+    class IDM_TRUSTSTORE,IDM_STOREPASS,DS_CERT security
+    class DS_IDREPO,DS_ADMIN,IDM_REPO_DATA ds
+    class AM_AUTH,AM_URL am
+    class IDM_REST,IDM_ADMIN,IDM_MANAGED,IDM_SYNC service
+                </div>
+            </div>
+
+            <div class="description">
+                <h2>IDM Sub-Architecture Details</h2>
+                <div class="description-section">
+                    <h3>IDM Deployment</h3>
+                    <ul>
+                        <li><strong>Package:</strong> IDM-8.0.0.zip extracted to /opt/ping/openidm</li>
+                        <li><strong>Startup:</strong> startup.sh script launches IDM as background Java process</li>
+                        <li><strong>Shutdown:</strong> shutdown.sh script for graceful process termination</li>
+                        <li><strong>Ports:</strong> HTTP 8080, HTTPS 8553, Mutual Auth 9444 (configurable in boot.properties)</li>
+                        <li><strong>Host:</strong> Configurable hostname in boot.properties (default: openidm.example.com)</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Configuration Files Structure</h3>
+                    <ul>
+                        <li><strong>repo.ds.json:</strong> External DS repository configuration with LDAP connection details, bind DN, and repository structure</li>
+                        <li><strong>access.json:</strong> Authorization rules and access control policies</li>
+                        <li><strong>managed.json:</strong> Managed object schema definitions (users, roles, organizations, etc.)</li>
+                        <li><strong>authentication.json:</strong> Authentication module configuration, including AM integration</li>
+                        <li><strong>metrics.json:</strong> Metrics collection and monitoring configuration</li>
+                        <li><strong>ui-configuration.json:</strong> UI settings and preferences</li>
+                        <li><strong>ui-themerealm.json:</strong> Theme and branding configuration</li>
+                        <li><strong>servletfilter-cors.json:</strong> CORS policy for cross-origin requests</li>
+                        <li><strong>boot.properties:</strong> HTTP/HTTPS ports, hostname, and bootstrap configuration</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Security Configuration</h3>
+                    <ul>
+                        <li><strong>Truststore:</strong> Java keystore at security/truststore (JKS format)</li>
+                        <li><strong>Password File:</strong> Storepass file contains truststore password</li>
+                        <li><strong>DS Certificate:</strong> DS IDRepo CA certificate imported into truststore for SSL trust</li>
+                        <li><strong>Purpose:</strong> Enables secure LDAPS connections to DS IDRepo</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>DS Repository Connection</h3>
+                    <ul>
+                        <li><strong>Connection:</strong> LDAPS connection to DS IDRepo on port 2636 with StartTLS enabled</li>
+                        <li><strong>Admin DN:</strong> Uses cn=Directory Manager for root-level operations</li>
+                        <li><strong>Repository Structure:</strong> Data stored under dc=openidm,dc=forgerock,dc=com</li>
+                        <li><strong>Managed Objects:</strong> Users, roles, organizations, and other IDM objects stored in DS</li>
+                        <li><strong>Connection Pool:</strong> Configurable connection pool size and heartbeat settings</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>AM Integration</h3>
+                    <ul>
+                        <li><strong>Authentication:</strong> IDM uses AM for user authentication via OAuth2/OIDC</li>
+                        <li><strong>Token Validation:</strong> Validates OAuth2 tokens issued by AM</li>
+                        <li><strong>AM URL:</strong> Configured AM endpoint (http://am.example.com:8081/am)</li>
+                        <li><strong>Single Sign-On:</strong> Enables SSO between AM and IDM</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>IDM Services</h3>
+                    <ul>
+                        <li><strong>REST API:</strong> RESTful API at /openidm/* for identity operations</li>
+                        <li><strong>Admin Console:</strong> Web-based admin interface at /admin</li>
+                        <li><strong>Managed Objects:</strong> CRUD operations on managed objects at /openidm/managed/*</li>
+                        <li><strong>Sync Engine:</strong> Reconciliation and synchronization engine for identity data</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- IG Sub-Architecture Tab -->
+        <div id="ig" class="tab-content">
+            <h2 class="diagram-title">Identity Gateway (IG) Sub-Architecture</h2>
+            <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px;">
+                Detailed view of IG deployment, route configuration, TLS/keystore, and dependencies
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid" id="ig-diagram">
+graph TB
+    subgraph "IG Deployment"
+        IG_ZIP["IG ZIP<br/>PingGateway-2025.3.0.zip"]
+        IG_EXTRACT["Extracted IG<br/>/opt/ping/identity-gateway-2025.3.0"]
+        IG_START["start.sh<br/>Startup Script"]
+        IG_STOP["stop.sh<br/>Shutdown Script"]
+    end
+
+    subgraph "IG Configuration Directory"
+        IG_CONFIG_DIR["~/.openig/config<br/>Configuration Root"]
+        IG_CONFIG["config.json<br/>Main Configuration<br/>HTTP/HTTPS Ports"]
+        IG_ADMIN["admin.json<br/>Admin Interface Config"]
+        IG_LOGBACK["logback.xml<br/>Logging Configuration"]
+    end
+
+    subgraph "IG Routes"
+        ROUTE_AM["01-am.json<br/>AM Route<br/>Proxy to AM"]
+        ROUTE_IDM["02-idm.json<br/>IDM Route<br/>Proxy to IDM"]
+        ROUTE_PLATFORM["03-platform.json<br/>Platform Route<br/>Admin UI"]
+        ROUTE_ENDUSER["04-enduser.json<br/>End-user Route<br/>User Portal"]
+        ROUTE_LOGIN["05-login.json<br/>Login Route<br/>Login Pages"]
+    end
+
+    subgraph "TLS/Keystore Management"
+        DSKEYMGR["dskeymgr Tool<br/>DS Key Manager<br/>TLS Key Generation"]
+        IG_KEYSTORE["IG Keystore<br/>~/.openig/keystore<br/>TLS Certificates"]
+        IG_KEYSTORE_PIN["keystore.pin<br/>Keystore Password File"]
+        IG_CA_CERT["ca-cert.pem<br/>CA Certificate<br/>For Client Trust"]
+    end
+
+    subgraph "IG Dependencies"
+        AM_BACKEND["AM Backend<br/>http://am.example.com:8081/am<br/>Auth Services"]
+        IDM_BACKEND["IDM Backend<br/>http://openidm.example.com:8080/openidm<br/>Identity APIs"]
+    end
+
+    subgraph "IG Services"
+        IG_HTTP["HTTP Service<br/>Port: 7080<br/>Non-secure"]
+        IG_HTTPS["HTTPS Service<br/>Port: 9443<br/>TLS Encrypted"]
+        IG_PING["Health Check<br/>/openig/ping<br/>Status Endpoint"]
+    end
+
+    subgraph "External Access"
+        USERS_IG["End Users<br/>HTTPS:9443"]
+        ADMINS_IG["Administrators<br/>HTTPS:9443"]
+    end
+
+    %% Deployment flow
+    IG_ZIP --> IG_EXTRACT
+    IG_EXTRACT --> IG_START
+    IG_EXTRACT --> IG_STOP
+
+    %% Configuration
+    IG_EXTRACT --> IG_CONFIG_DIR
+    IG_CONFIG_DIR --> IG_CONFIG
+    IG_CONFIG_DIR --> IG_ADMIN
+    IG_CONFIG_DIR --> IG_LOGBACK
+
+    %% Routes
+    IG_CONFIG_DIR --> ROUTE_AM
+    IG_CONFIG_DIR --> ROUTE_IDM
+    IG_CONFIG_DIR --> ROUTE_PLATFORM
+    IG_CONFIG_DIR --> ROUTE_ENDUSER
+    IG_CONFIG_DIR --> ROUTE_LOGIN
+
+    %% TLS setup
+    DSKEYMGR --> IG_KEYSTORE
+    DSKEYMGR --> IG_CA_CERT
+    IG_KEYSTORE_PIN --> IG_KEYSTORE
+    IG_KEYSTORE --> IG_CONFIG
+
+    %% Route to backend
+    ROUTE_AM --> AM_BACKEND
+    ROUTE_IDM --> IDM_BACKEND
+    ROUTE_PLATFORM --> AM_BACKEND
+    ROUTE_PLATFORM --> IDM_BACKEND
+    ROUTE_ENDUSER --> AM_BACKEND
+    ROUTE_ENDUSER --> IDM_BACKEND
+    ROUTE_LOGIN --> AM_BACKEND
+
+    %% Services
+    IG_START --> IG_HTTP
+    IG_START --> IG_HTTPS
+    IG_HTTPS --> IG_PING
+
+    %% External access
+    USERS_IG --> IG_HTTPS
+    ADMINS_IG --> IG_HTTPS
+
+    %% Styling
+    classDef ig fill:#1abc9c,stroke:#16a085,stroke-width:2px,color:#fff
+    classDef config fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef route fill:#9b59b6,stroke:#8e44ad,stroke-width:2px,color:#fff
+    classDef tls fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef backend fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef service fill:#e74c3c,stroke:#c0392b,stroke-width:2px,color:#fff
+    classDef external fill:#95a5a6,stroke:#7f8c8d,stroke-width:2px,color:#fff
+
+    class IG_ZIP,IG_EXTRACT,IG_START,IG_STOP ig
+    class IG_CONFIG_DIR,IG_CONFIG,IG_ADMIN,IG_LOGBACK config
+    class ROUTE_AM,ROUTE_IDM,ROUTE_PLATFORM,ROUTE_ENDUSER,ROUTE_LOGIN route
+    class DSKEYMGR,IG_KEYSTORE,IG_KEYSTORE_PIN,IG_CA_CERT tls
+    class AM_BACKEND,IDM_BACKEND backend
+    class IG_HTTP,IG_HTTPS,IG_PING service
+    class USERS_IG,ADMINS_IG external
+                </div>
+            </div>
+
+            <div class="description">
+                <h2>IG Sub-Architecture Details</h2>
+                <div class="description-section">
+                    <h3>IG Deployment</h3>
+                    <ul>
+                        <li><strong>Package:</strong> PingGateway-2025.3.0.zip extracted to /opt/ping/identity-gateway-2025.3.0</li>
+                        <li><strong>Startup:</strong> start.sh script launches IG as background process</li>
+                        <li><strong>Shutdown:</strong> stop.sh script for graceful process termination</li>
+                        <li><strong>Configuration:</strong> Configuration stored in ~/.openig/config directory</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Configuration Files</h3>
+                    <ul>
+                        <li><strong>config.json:</strong> Main configuration file defining HTTP (7080) and HTTPS (9443) ports, handlers, and filters</li>
+                        <li><strong>admin.json:</strong> Admin interface configuration for IG management</li>
+                        <li><strong>logback.xml:</strong> Logging configuration using Logback framework</li>
+                        <li><strong>Routes Directory:</strong> Individual route JSON files in config/routes/ directory</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Route Configuration</h3>
+                    <ul>
+                        <li><strong>01-am.json:</strong> Routes /am/* requests to AM backend, handles AM-specific paths</li>
+                        <li><strong>02-idm.json:</strong> Routes /openidm/* requests to IDM backend for identity APIs</li>
+                        <li><strong>03-platform.json:</strong> Routes /platform-ui/* to admin console, proxies to AM and IDM</li>
+                        <li><strong>04-enduser.json:</strong> Routes /enduser-ui/* to end-user portal, requires AM authentication</li>
+                        <li><strong>05-login.json:</strong> Routes login pages, integrates with AM authentication flows</li>
+                        <li><strong>Route Features:</strong> Each route can include filters, handlers, and transformation logic</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>TLS/Keystore Management</h3>
+                    <ul>
+                        <li><strong>dskeymgr:</strong> DS Key Manager tool used to generate TLS key pairs</li>
+                        <li><strong>Keystore:</strong> Java keystore at ~/.openig/keystore containing TLS certificates</li>
+                        <li><strong>PIN File:</strong> keystore.pin file contains keystore password (chmod 600)</li>
+                        <li><strong>CA Certificate:</strong> ca-cert.pem exported for client trust (used by browsers/clients)</li>
+                        <li><strong>Hostname:</strong> Certificate generated for IG hostname (platform.example.com)</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Backend Dependencies</h3>
+                    <ul>
+                        <li><strong>AM Backend:</strong> http://am.example.com:8081/am for authentication and authorization services</li>
+                        <li><strong>IDM Backend:</strong> http://openidm.example.com:8080/openidm for identity management APIs</li>
+                        <li><strong>Proxy Mode:</strong> IG acts as reverse proxy, forwarding requests to appropriate backends</li>
+                        <li><strong>Load Balancing:</strong> Can be configured for multiple backend instances</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>IG Services</h3>
+                    <ul>
+                        <li><strong>HTTP Service:</strong> Non-secure HTTP on port 7080 (typically for internal use)</li>
+                        <li><strong>HTTPS Service:</strong> TLS-encrypted HTTPS on port 9443 (primary external access)</li>
+                        <li><strong>Health Check:</strong> /openig/ping endpoint for monitoring and health checks</li>
+                        <li><strong>Status:</strong> Returns HTTP 200 when IG is operational</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform UI Sub-Architecture Tab -->
+        <div id="ui" class="tab-content">
+            <h2 class="diagram-title">Platform UI Sub-Architecture</h2>
+            <p style="text-align: center; color: #7f8c8d; margin-bottom: 20px;">
+                Detailed view of Platform UI deployment, connections to IG and AM, and optional services
+            </p>
+
+            <div class="diagram-container">
+                <div class="mermaid" id="ui-diagram">
+graph TB
+    subgraph "Platform UI Package"
+        UI_ZIP["Platform UI ZIP<br/>PlatformUI-8.0.1.0523.zip"]
+        UI_EXTRACT["Extracted UI<br/>Temporary Workspace"]
+        UI_BUNDLE["PlatformUI Bundle<br/>www/ directory"]
+    end
+
+    subgraph "UI Components"
+        PLATFORM_UI["Platform UI<br/>www/platform/<br/>Admin Console"]
+        ENDUSER_UI["End-user UI<br/>www/enduser/<br/>User Portal"]
+        LOGIN_UI["Login UI<br/>www/login/<br/>Login Pages"]
+    end
+
+    subgraph "Tomcat Deployment"
+        TOMCAT_UI["Apache Tomcat<br/>Same instance as AM<br/>or Separate"]
+        WEBAPPS["webapps/ Directory"]
+        PLATFORM_DEPLOY["platform/<br/>Deployed to webapps/"]
+        ENDUSER_DEPLOY["enduser/<br/>Deployed to webapps/"]
+        LOGIN_DEPLOY["login/*<br/>Deployed to am/XUI/"]
+    end
+
+    subgraph "URL Configuration"
+        VAR_REPLACE["variable_replacement.sh<br/>JavaScript URL Updates"]
+        AM_URL_VAR["AM_URL<br/>https://platform.example.com:9443/am"]
+        AM_ADMIN_VAR["AM_ADMIN_URL<br/>https://platform.example.com:9443/am/ui-admin"]
+        IDM_REST_VAR["IDM_REST_URL<br/>https://platform.example.com:9443/openidm"]
+        IDM_ADMIN_VAR["IDM_ADMIN_URL<br/>https://platform.example.com:9443/admin"]
+        ENDUSER_VAR["ENDUSER_UI_URL<br/>https://platform.example.com:9443/enduser-ui/"]
+        PLATFORM_ADMIN_VAR["PLATFORM_ADMIN_URL<br/>https://platform.example.com:9443/platform-ui/"]
+    end
+
+    subgraph "IG Routing"
+        IG_ROUTE_PLATFORM["IG Route: /platform-ui/*<br/>Routes to Platform UI"]
+        IG_ROUTE_ENDUSER["IG Route: /enduser-ui/*<br/>Routes to End-user UI"]
+        IG_ROUTE_LOGIN["IG Route: /am/XUI/*<br/>Routes to Login UI"]
+    end
+
+    subgraph "AM Integration"
+        AM_AUTH_UI["AM Authentication<br/>OAuth2/OIDC<br/>Token Validation"]
+        AM_SESSION["AM Session<br/>Cookie-based<br/>SSO"]
+    end
+
+    subgraph "IDM Integration"
+        IDM_API_UI["IDM REST API<br/>Identity Operations<br/>User Management"]
+    end
+
+    subgraph "External Access"
+        ADMINS_UI["Administrators<br/>HTTPS:9443/platform-ui/"]
+        USERS_UI["End Users<br/>HTTPS:9443/enduser-ui/"]
+        LOGIN_ACCESS["Login Access<br/>HTTPS:9443/am/XUI/"]
+    end
+
+    %% Deployment flow
+    UI_ZIP --> UI_EXTRACT
+    UI_EXTRACT --> UI_BUNDLE
+    UI_BUNDLE --> PLATFORM_UI
+    UI_BUNDLE --> ENDUSER_UI
+    UI_BUNDLE --> LOGIN_UI
+
+    %% URL replacement
+    VAR_REPLACE --> AM_URL_VAR
+    VAR_REPLACE --> AM_ADMIN_VAR
+    VAR_REPLACE --> IDM_REST_VAR
+    VAR_REPLACE --> IDM_ADMIN_VAR
+    VAR_REPLACE --> ENDUSER_VAR
+    VAR_REPLACE --> PLATFORM_ADMIN_VAR
+    VAR_REPLACE --> PLATFORM_UI
+    VAR_REPLACE --> ENDUSER_UI
+    VAR_REPLACE --> LOGIN_UI
+
+    %% Deployment to Tomcat
+    PLATFORM_UI --> PLATFORM_DEPLOY
+    ENDUSER_UI --> ENDUSER_DEPLOY
+    LOGIN_UI --> LOGIN_DEPLOY
+    PLATFORM_DEPLOY --> WEBAPPS
+    ENDUSER_DEPLOY --> WEBAPPS
+    LOGIN_DEPLOY --> WEBAPPS
+    WEBAPPS --> TOMCAT_UI
+
+    %% IG routing
+    IG_ROUTE_PLATFORM --> PLATFORM_DEPLOY
+    IG_ROUTE_ENDUSER --> ENDUSER_DEPLOY
+    IG_ROUTE_LOGIN --> LOGIN_DEPLOY
+
+    %% AM integration
+    PLATFORM_UI --> AM_AUTH_UI
+    ENDUSER_UI --> AM_AUTH_UI
+    LOGIN_UI --> AM_SESSION
+    AM_AUTH_UI --> AM_URL_VAR
+    AM_SESSION --> AM_URL_VAR
+
+    %% IDM integration
+    PLATFORM_UI --> IDM_API_UI
+    ENDUSER_UI --> IDM_API_UI
+    IDM_API_UI --> IDM_REST_VAR
+
+    %% External access
+    ADMINS_UI --> IG_ROUTE_PLATFORM
+    USERS_UI --> IG_ROUTE_ENDUSER
+    LOGIN_ACCESS --> IG_ROUTE_LOGIN
+
+    %% Styling
+    classDef ui fill:#e67e22,stroke:#d35400,stroke-width:2px,color:#fff
+    classDef tomcat fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef config fill:#3498db,stroke:#2980b9,stroke-width:2px,color:#fff
+    classDef ig fill:#1abc9c,stroke:#16a085,stroke-width:2px,color:#fff
+    classDef am fill:#2ecc71,stroke:#27ae60,stroke-width:2px,color:#fff
+    classDef idm fill:#f39c12,stroke:#e67e22,stroke-width:2px,color:#fff
+    classDef external fill:#95a5a6,stroke:#7f8c8d,stroke-width:2px,color:#fff
+
+    class UI_ZIP,UI_EXTRACT,UI_BUNDLE,PLATFORM_UI,ENDUSER_UI,LOGIN_UI ui
+    class TOMCAT_UI,WEBAPPS,PLATFORM_DEPLOY,ENDUSER_DEPLOY,LOGIN_DEPLOY tomcat
+    class VAR_REPLACE,AM_URL_VAR,AM_ADMIN_VAR,IDM_REST_VAR,IDM_ADMIN_VAR,ENDUSER_VAR,PLATFORM_ADMIN_VAR config
+    class IG_ROUTE_PLATFORM,IG_ROUTE_ENDUSER,IG_ROUTE_LOGIN ig
+    class AM_AUTH_UI,AM_SESSION,AM_URL_VAR am
+    class IDM_API_UI,IDM_REST_VAR idm
+    class ADMINS_UI,USERS_UI,LOGIN_ACCESS external
+                </div>
+            </div>
+
+            <div class="description">
+                <h2>Platform UI Sub-Architecture Details</h2>
+                <div class="description-section">
+                    <h3>UI Package and Extraction</h3>
+                    <ul>
+                        <li><strong>Package:</strong> PlatformUI-8.0.1.0523.zip contains all UI components</li>
+                        <li><strong>Extraction:</strong> Extracted to temporary workspace for processing</li>
+                        <li><strong>Structure:</strong> Contains www/ directory with platform/, enduser/, and login/ subdirectories</li>
+                        <li><strong>Components:</strong> Three main UI applications bundled together</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>UI Components</h3>
+                    <ul>
+                        <li><strong>Platform UI:</strong> Admin console for administrators, deployed to webapps/platform/</li>
+                        <li><strong>End-user UI:</strong> Self-service portal for end users, deployed to webapps/enduser/</li>
+                        <li><strong>Login UI:</strong> Authentication and login pages, deployed to webapps/am/XUI/ (replaces default AM login)</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>Tomcat Deployment</h3>
+                    <ul>
+                        <li><strong>Container:</strong> Deployed into Apache Tomcat (same instance as AM or separate)</li>
+                        <li><strong>Location:</strong> Platform and End-user UIs in webapps/ directory, Login UI in am/XUI/</li>
+                        <li><strong>Access:</strong> Accessed through IG gateway, not directly via Tomcat ports</li>
+                        <li><strong>Restart:</strong> Tomcat restart required after UI deployment</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>URL Configuration</h3>
+                    <ul>
+                        <li><strong>Script:</strong> variable_replacement.sh updates JavaScript files with correct URLs</li>
+                        <li><strong>AM URLs:</strong> Points to IG gateway URLs (https://platform.example.com:9443/am)</li>
+                        <li><strong>IDM URLs:</strong> Points to IG gateway URLs for IDM APIs (https://platform.example.com:9443/openidm)</li>
+                        <li><strong>UI URLs:</strong> Self-referential URLs for UI components through IG gateway</li>
+                        <li><strong>Purpose:</strong> Ensures all UI components communicate through IG, not directly to backends</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>IG Routing</h3>
+                    <ul>
+                        <li><strong>Platform Route:</strong> /platform-ui/* routes to webapps/platform/ for admin console</li>
+                        <li><strong>End-user Route:</strong> /enduser-ui/* routes to webapps/enduser/ for user portal</li>
+                        <li><strong>Login Route:</strong> /am/XUI/* routes to webapps/am/XUI/ for login pages</li>
+                        <li><strong>Gateway:</strong> All UI access goes through IG at HTTPS port 9443</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>AM Integration</h3>
+                    <ul>
+                        <li><strong>Authentication:</strong> All UIs use AM for authentication via OAuth2/OIDC</li>
+                        <li><strong>Session Management:</strong> Cookie-based SSO sessions managed by AM</li>
+                        <li><strong>Token Validation:</strong> OAuth2 tokens validated against AM</li>
+                        <li><strong>Admin Access:</strong> Platform UI requires AM admin privileges</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>IDM Integration</h3>
+                    <ul>
+                        <li><strong>Identity Operations:</strong> UIs call IDM REST API for user management operations</li>
+                        <li><strong>User Management:</strong> Create, read, update, delete user operations</li>
+                        <li><strong>API Access:</strong> Through IG gateway to IDM backend</li>
+                        <li><strong>Authorization:</strong> IDM enforces authorization rules for API access</li>
+                    </ul>
+                </div>
+                <div class="description-section">
+                    <h3>External Access</h3>
+                    <ul>
+                        <li><strong>Administrators:</strong> Access Platform UI at https://platform.example.com:9443/platform-ui/</li>
+                        <li><strong>End Users:</strong> Access End-user UI at https://platform.example.com:9443/enduser-ui/</li>
+                        <li><strong>Login:</strong> Access Login UI at https://platform.example.com:9443/am/XUI/</li>
+                        <li><strong>Security:</strong> All access through IG with TLS encryption</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 20
+            },
+            themeVariables: {
+                primaryColor: '#3498db',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#2980b9',
+                lineColor: '#34495e',
+                secondaryColor: '#ecf0f1',
+                tertiaryColor: '#f8f9fa'
+            },
+            securityLevel: 'loose',
+            logLevel: 'error'
+        });
+
+        // Tab functionality
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Find and activate the corresponding button
+            tabButtons.forEach(button => {
+                const onclickAttr = button.getAttribute('onclick');
+                if (onclickAttr && onclickAttr.includes("'" + tabName + "'")) {
+                    button.classList.add('active');
+                }
+            });
+
+            // Re-render Mermaid diagrams in the active tab if needed
+            setTimeout(() => {
+                const activeDiagram = document.querySelector(`#${tabName} .mermaid`);
+                if (activeDiagram) {
+                    try {
+                        // Only init if not already processed
+                        if (!activeDiagram.hasAttribute('data-processed')) {
+                            mermaid.init(undefined, activeDiagram);
+                        }
+                    } catch (error) {
+                        console.error('Mermaid rendering error:', error);
+                    }
+                }
+            }, 100);
+        }
+    </script>
+</body>
+</html>

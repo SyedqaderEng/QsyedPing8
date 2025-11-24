@@ -1,0 +1,59 @@
+---
+# Bootstrap Platform8 - Full Deployment
+# Deploys all components in correct dependency order
+
+- name: Bootstrap Platform8 IAM Stack
+  hosts: all
+  become: yes
+  gather_facts: yes
+  order: sorted
+
+  pre_tasks:
+    - name: Include common role for prerequisites
+      include_role:
+        name: common
+      tags: always
+
+  tasks:
+    - name: Deploy Directory Services
+      include_playbook: deploy-ds.yml
+      tags:
+        - ds
+        - bootstrap
+
+    - name: Deploy Access Management
+      include_playbook: deploy-am.yml
+      tags:
+        - am
+        - bootstrap
+
+    - name: Configure AM via REST API
+      include_playbook: configure-am-rest.yml
+      tags:
+        - am
+        - bootstrap
+        - configure
+
+    - name: Deploy Identity Management
+      include_playbook: deploy-idm.yml
+      tags:
+        - idm
+        - bootstrap
+
+    - name: Deploy Identity Gateway
+      include_playbook: deploy-ig.yml
+      tags:
+        - ig
+        - bootstrap
+
+    - name: Deploy Platform UI
+      include_playbook: deploy-ui.yml
+      tags:
+        - ui
+        - bootstrap
+
+  post_tasks:
+    - name: Display bootstrap completion
+      debug:
+        msg: "Platform8 IAM stack bootstrap completed successfully!"
+

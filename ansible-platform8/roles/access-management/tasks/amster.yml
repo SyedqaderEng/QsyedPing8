@@ -1,0 +1,55 @@
+---
+# Amster Setup and Operations
+
+- name: Check if Amster ZIP exists
+  stat:
+    path: "{{ amster_zip }}"
+  register: amster_zip_stat
+
+- name: Fail if Amster ZIP not found
+  fail:
+    msg: "Amster ZIP file not found at {{ amster_zip }}. Please place Amster-{{ amster_version }}.zip in software/am/ directory."
+  when: not amster_zip_stat.stat.exists
+
+- name: Check if Amster is already extracted
+  stat:
+    path: "{{ amster_dir }}/amster"
+  register: amster_extracted
+
+- name: Remove old Amster directory
+  file:
+    path: "{{ amster_dir }}"
+    state: absent
+  when: am_force_reinstall | default(false)
+
+- name: Extract Amster ZIP
+  unarchive:
+    src: "{{ amster_zip }}"
+    dest: "{{ software_dir }}/am"
+    remote_src: false
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+  when: not amster_extracted.stat.exists or am_force_reinstall | default(false)
+
+- name: Verify Amster executable
+  stat:
+    path: "{{ amster_dir }}/amster"
+    mode: '0755'
+  register: amster_executable
+
+- name: Set Amster executable permissions
+  file:
+    path: "{{ amster_dir }}/amster"
+    mode: '0755'
+  when: not amster_executable.stat.mode | default('0000') | int == 493  # 0755 in decimal
+
+- name: Test Amster version
+  command: "{{ amster_dir }}/amster --version"
+  register: amster_version_test
+  changed_when: false
+  failed_when: false
+
+- name: Display Amster version
+  debug:
+    msg: "Amster is ready: {{ amster_version_test.stdout_lines[0] if amster_version_test.rc == 0 else 'Version check failed' }}"
+

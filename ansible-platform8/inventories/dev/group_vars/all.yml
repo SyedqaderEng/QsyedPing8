@@ -1,0 +1,90 @@
+---
+# Development Environment - Global Variables
+
+environment: dev
+vault_environment: dev
+
+# Hostnames
+am_hostname: "am.example.com"
+idm_hostname: "openidm.example.com"
+ig_hostname: "platform.example.com"
+platform_hostname: "platform.example.com"
+login_hostname: "login.example.com"
+admin_hostname: "admin.example.com"
+enduser_hostname: "enduser.example.com"
+cts_hostname: "cts1.example.com"
+amconfig_hostname: "amconfig1.example.com"
+amidmrepo_hostname: "idrepo1.example.com"
+
+# Software versions
+ds_version: "8.0.0"
+am_version: "8.0.1"
+amster_version: "8.0.1"
+idm_version: "8.0.0"
+ig_version: "2025.3.0"
+ui_version: "8.0.1.0523"
+tomcat_version: "10.1.46"
+
+# Software file paths (relative to software_dir)
+ds_zip_file: "{{ software_dir }}/ds/DS-{{ ds_version }}.zip"
+am_war: "{{ software_dir }}/am/AM-{{ am_version }}.war"
+amster_zip: "{{ software_dir }}/am/Amster-{{ amster_version }}.zip"
+idm_zip: "{{ software_dir }}/idm/IDM-{{ idm_version }}.zip"
+ig_zip: "{{ software_dir }}/ig/PingGateway-{{ ig_version }}.zip"
+ui_zip: "{{ software_dir }}/ui/PlatformUI-{{ ui_version }}.zip"
+
+# AM journeys directory (relative to original project)
+am_journeys_dir: "{{ playbook_dir }}/../am/root"
+
+# Installation directories
+ds_dir: "{{ base_install_dir }}/ds"
+ds_config_dir: "{{ ds_dir }}/config"
+ds_cts_dir: "{{ ds_dir }}/cts"
+ds_idrepo_dir: "{{ ds_dir }}/idrepo"
+idm_dir: "{{ base_install_dir }}"
+idm_extract_dir: "{{ idm_dir }}/openidm"
+ig_dir: "{{ base_install_dir }}/identity-gateway-{{ ig_version }}"
+
+# AM directories
+am_dir: "{{ install_user_home }}/openam"
+am_cfg_dir: "{{ install_user_home }}/.openamcfg"
+am_fbc_dir: "{{ install_user_home }}/{{ am_context }}"
+am_truststore_folder: "{{ base_install_dir }}/{{ am_context }}/security/keystores"
+am_truststore: "{{ am_truststore_folder }}/truststore"
+
+# IG directories
+ig_cfg_dir: "{{ install_user_home }}/.openig"
+ig_config: "{{ ig_cfg_dir }}/config"
+ig_routes: "{{ ig_config }}/routes"
+ig_tmp_dir: "{{ ig_cfg_dir }}/tmp"
+ig_key_dir: "{{ base_install_dir }}/ig_security"
+ig_keystore_pin_file: "{{ ig_key_dir }}/keystore.pin"
+ig_keystore_file: "{{ ig_key_dir }}/keystore"
+ig_ca_cert_file: "{{ ig_key_dir }}/ca-cert.pem"
+
+# Tomcat directories
+tomcat_webapps_dir: "{{ tomcat_dir }}/webapps"
+tomcat_bin_dir: "{{ tomcat_dir }}/bin"
+tomcat_am_war: "{{ tomcat_webapps_dir }}/{{ am_context }}.war"
+am_setenv: "{{ tomcat_bin_dir }}/setenv.sh"
+secure_xui_dir: "{{ tomcat_webapps_dir }}/{{ am_context }}/XUI"
+
+# IDM directories
+idm_config_dir: "{{ idm_extract_dir }}/conf"
+idm_logs_dir: "{{ idm_extract_dir }}/logs"
+idm_cert_file: "{{ am_truststore_folder }}/ds-repo-ca-cert.pem"
+idm_truststore: "{{ idm_extract_dir }}/security/truststore"
+idm_storepass_file: "{{ idm_extract_dir }}/security/storepass"
+boot_file: "{{ idm_extract_dir }}/resolver/boot.properties"
+
+# UI directories
+tmp_root: "{{ software_dir }}/tmp"
+tmp_ui: "{{ tmp_root }}/ui-zip"
+webapps_dir: "{{ tomcat_webapps_dir }}"
+
+# AM URL
+am_url: "http://{{ am_hostname }}:{{ tomcat_http_port }}/{{ am_context }}"
+
+# DS Key Manager
+dskeymgr: "{{ ds_idrepo_dir }}/opendj/bin/dskeymgr"
+

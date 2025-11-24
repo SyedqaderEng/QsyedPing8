@@ -1,0 +1,78 @@
+---
+# IDM Installation Tasks
+
+- name: Check for running IDM process
+  shell: pgrep -f '[o]penidm' || true
+  register: idm_process
+  changed_when: false
+  failed_when: false
+
+- name: Stop IDM if running
+  shell: "{{ idm_extract_dir }}/shutdown.sh"
+  when: idm_process.stdout | length > 0
+  failed_when: false
+  async: 10
+  poll: 2
+
+- name: Kill IDM process if still running
+  shell: kill {{ idm_process.stdout }} || true
+  when: idm_process.stdout | length > 0
+  failed_when: false
+
+- name: Wait for IDM to stop
+  wait_for:
+    port: "{{ boot_port_http }}"
+    state: stopped
+    timeout: 30
+  failed_when: false
+
+- name: Check if IDM is already extracted
+  stat:
+    path: "{{ idm_extract_dir }}"
+  register: idm_extracted
+
+- name: Backup existing IDM installation
+  archive:
+    path: "{{ idm_extract_dir }}"
+    dest: "{{ backup_base_dir }}/idm-backup-{{ ansible_date_time.epoch }}.tar.gz"
+    format: gz
+  when: 
+    - idm_extracted.stat.exists
+    - not (idm_force_reinstall | default(false))
+  failed_when: false
+
+- name: Remove existing IDM installation (if force reinstall)
+  file:
+    path: "{{ idm_extract_dir }}"
+    state: absent
+  when: 
+    - idm_extracted.stat.exists
+    - idm_force_reinstall | default(false)
+
+- name: Verify IDM ZIP file exists
+  stat:
+    path: "{{ idm_zip }}"
+  register: idm_zip_file_stat
+
+- name: Fail if IDM ZIP not found
+  fail:
+    msg: "IDM ZIP file not found at {{ idm_zip }}. Please place IDM-{{ idm_version }}.zip in software/idm/ directory."
+  when: not idm_zip_file_stat.stat.exists
+
+- name: Extract IDM ZIP
+  unarchive:
+    src: "{{ idm_zip }}"
+    dest: "{{ idm_dir }}"
+    remote_src: false
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+  when: not idm_extracted.stat.exists or idm_force_reinstall | default(false)
+
+- name: Set IDM directory permissions
+  file:
+    path: "{{ idm_extract_dir }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+    recurse: yes
+

@@ -1,0 +1,56 @@
+---
+# Directory Setup
+
+- name: Create base installation directory
+  file:
+    path: "{{ base_install_dir }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+
+- name: Create DS directory
+  file:
+    path: "{{ ds_dir }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+
+- name: Create AM truststore directory
+  file:
+    path: "{{ am_truststore_folder }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+
+- name: Create IG security directory
+  file:
+    path: "{{ ig_key_dir }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0700'
+
+- name: Create backup directory
+  file:
+    path: "{{ backup_base_dir }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+
+- name: Create software directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ software_dir }}/ds"
+    - "{{ software_dir }}/am"
+    - "{{ software_dir }}/idm"
+    - "{{ software_dir }}/ig"
+    - "{{ software_dir }}/ui"
+    - "{{ software_dir }}/tmp"
+

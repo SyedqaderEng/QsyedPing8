@@ -1,0 +1,43 @@
+---
+# Global Variables for All Environments
+# These can be overridden by environment-specific group_vars
+
+# Installation user
+install_user: "fradmin"
+install_user_home: "/home/{{ install_user }}"
+
+# Base installation directory
+base_install_dir: "/opt/ping"
+tomcat_dir: "/opt/tomcat"
+
+# Software directory (relative to playbook location)
+software_dir: "{{ playbook_dir }}/../software"
+
+# AM context path
+am_context: "am"
+
+# Default password (should be overridden by Vault)
+default_password: "password"
+
+# DS deployment ID (should be overridden by Vault)
+ds_deployment_id: "AX8fkJybs4nP3qfAXN3CMw4BCYspGQ5CBVN1bkVDAOgwVKjG2Wo2ZTs"
+
+# Truststore password (should be overridden by Vault)
+truststore_password: "changeit"
+
+# Domain suffix
+ds_repo_suffix: "forgerock.com"
+
+# Cookie domain
+cookie_domain: "example.com"
+
+# Vault configuration
+vault_addr: "{{ lookup('env', 'VAULT_ADDR') | default('https://vault.example.com', true) }}"
+vault_auth_method: "token"  # token, userpass, ldap, etc.
+
+# Backup directory
+backup_base_dir: "/opt/platform8/backups"
+
+# Logging
+ansible_log_path: "{{ playbook_dir }}/ansible.log"
+

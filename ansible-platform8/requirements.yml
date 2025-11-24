@@ -1,0 +1,15 @@
+---
+# Ansible Collections
+collections:
+  - name: community.general
+    version: ">=7.0.0"
+  - name: hashi_vault
+    version: ">=4.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"
+
+# Ansible Roles (if needed)
+# roles:
+#   - name: geerlingguy.java
+#     version: ">=2.0.0"
+

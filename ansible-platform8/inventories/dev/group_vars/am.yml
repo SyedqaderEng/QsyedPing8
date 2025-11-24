@@ -1,0 +1,38 @@
+---
+# Access Management (AM) Configuration - Dev Environment
+
+# AM Admin
+am_admin_username: "amadmin"
+# am_admin_password: Retrieved from Vault at platform8/dev/am/admin_password
+
+# AM Configuration Store
+# am_config_store_password: Retrieved from Vault at platform8/dev/am/config_store_password
+
+# AM Identity Store
+# am_identity_store_password: Retrieved from Vault at platform8/dev/am/identity_store_password
+
+# AM CTS Store
+# am_cts_store_password: Retrieved from Vault at platform8/dev/am/cts_store_password
+
+# Truststore
+# truststore_password: Retrieved from Vault at platform8/dev/am/truststore_password
+
+# Tomcat
+tomcat_http_port: 8081
+
+# AM Deployment Mode
+am_deployment_mode: "ds"  # Options: "ds" or "fbc"
+
+# Amster
+amster_dir: "{{ software_dir }}/am/amster"
+
+# AM Realms
+am_realms:
+  - name: "alpha"
+    parent_path: "/"
+    active: true
+
+# AM Authentication Trees
+# Trees are imported from am_journeys_dir
+am_import_journeys: true
+

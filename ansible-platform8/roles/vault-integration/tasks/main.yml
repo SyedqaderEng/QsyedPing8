@@ -1,0 +1,23 @@
+---
+# Vault Integration Role
+# Provides Vault lookup utilities and secret retrieval
+
+- name: Display Vault configuration
+  debug:
+    msg: "Vault Address: {{ vault_addr }}, Environment: {{ vault_environment }}"
+  when: vault_debug | default(false)
+
+- name: Test Vault connectivity
+  uri:
+    url: "{{ vault_addr }}/v1/sys/health"
+    method: GET
+    status_code: [200, 429, 472, 473]
+  register: vault_health
+  failed_when: false
+  changed_when: false
+
+- name: Display Vault health status
+  debug:
+    msg: "Vault is {{ 'operational' if vault_health.status == 200 else 'unavailable or sealed' }}"
+  when: vault_debug | default(false)
+

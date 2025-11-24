@@ -1,0 +1,117 @@
+---
+# Platform UI Installation Tasks
+
+- name: Verify UI ZIP file exists
+  stat:
+    path: "{{ ui_zip }}"
+  register: ui_zip_file_stat
+
+- name: Fail if UI ZIP not found
+  fail:
+    msg: "UI ZIP file not found at {{ ui_zip }}. Please place PlatformUI-{{ ui_version }}.zip in software/ui/ directory."
+  when: not ui_zip_file_stat.stat.exists
+
+- name: Create temporary UI workspace
+  file:
+    path: "{{ tmp_ui }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+
+- name: Copy UI ZIP to workspace
+  copy:
+    src: "{{ ui_zip }}"
+    dest: "{{ tmp_ui }}/{{ ui_zip | basename }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+
+- name: Extract UI ZIP
+  unarchive:
+    src: "{{ tmp_ui }}/{{ ui_zip | basename }}"
+    dest: "{{ tmp_ui }}"
+    remote_src: true
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+
+- name: Set environment variables for URL replacement
+  set_fact:
+    ui_env_vars_dict: "{{ ui_env_vars }}"
+
+- name: Run variable replacement script
+  shell: |
+    cd {{ tmp_ui }}/PlatformUI
+    export AM_URL="{{ ui_env_vars.AM_URL }}"
+    export AM_ADMIN_URL="{{ ui_env_vars.AM_ADMIN_URL }}"
+    export IDM_REST_URL="{{ ui_env_vars.IDM_REST_URL }}"
+    export IDM_ADMIN_URL="{{ ui_env_vars.IDM_ADMIN_URL }}"
+    export IDM_UPLOAD_URL="{{ ui_env_vars.IDM_UPLOAD_URL }}"
+    export IDM_EXPORT_URL="{{ ui_env_vars.IDM_EXPORT_URL }}"
+    export ENDUSER_UI_URL="{{ ui_env_vars.ENDUSER_UI_URL }}"
+    export PLATFORM_ADMIN_URL="{{ ui_env_vars.PLATFORM_ADMIN_URL }}"
+    export ENDUSER_CLIENT_ID="{{ ui_env_vars.ENDUSER_CLIENT_ID }}"
+    export ADMIN_CLIENT_ID="{{ ui_env_vars.ADMIN_CLIENT_ID }}"
+    export THEME="{{ ui_env_vars.THEME }}"
+    export PLATFORM_UI_LOCALE="{{ ui_env_vars.PLATFORM_UI_LOCALE }}"
+    ./variable_replacement.sh \
+      www/platform/js/*.js \
+      www/enduser/js/*.js \
+      www/login/js/*.js
+  args:
+    chdir: "{{ tmp_ui }}/PlatformUI"
+  environment:
+    AM_URL: "{{ ui_env_vars.AM_URL }}"
+    AM_ADMIN_URL: "{{ ui_env_vars.AM_ADMIN_URL }}"
+    IDM_REST_URL: "{{ ui_env_vars.IDM_REST_URL }}"
+    IDM_ADMIN_URL: "{{ ui_env_vars.IDM_ADMIN_URL }}"
+    IDM_UPLOAD_URL: "{{ ui_env_vars.IDM_UPLOAD_URL }}"
+    IDM_EXPORT_URL: "{{ ui_env_vars.IDM_EXPORT_URL }}"
+    ENDUSER_UI_URL: "{{ ui_env_vars.ENDUSER_UI_URL }}"
+    PLATFORM_ADMIN_URL: "{{ ui_env_vars.PLATFORM_ADMIN_URL }}"
+    ENDUSER_CLIENT_ID: "{{ ui_env_vars.ENDUSER_CLIENT_ID }}"
+    ADMIN_CLIENT_ID: "{{ ui_env_vars.ADMIN_CLIENT_ID }}"
+    THEME: "{{ ui_env_vars.THEME }}"
+    PLATFORM_UI_LOCALE: "{{ ui_env_vars.PLATFORM_UI_LOCALE }}"
+
+- name: Copy Platform UI to Tomcat
+  copy:
+    src: "{{ tmp_ui }}/PlatformUI/www/platform/"
+    dest: "{{ secure_xui_dir }}/platform-ui/"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+    directory_mode: '0755'
+
+- name: Copy End-user UI to Tomcat
+  copy:
+    src: "{{ tmp_ui }}/PlatformUI/www/enduser/"
+    dest: "{{ webapps_dir }}/enduser-ui/"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+    directory_mode: '0755'
+
+- name: Copy Login UI to Tomcat
+  copy:
+    src: "{{ tmp_ui }}/PlatformUI/www/login/"
+    dest: "{{ webapps_dir }}/login-ui/"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+    directory_mode: '0755'
+
+- name: Clean up temporary workspace
+  file:
+    path: "{{ tmp_ui }}"
+    state: absent
+
+- name: Restart Tomcat
+  include_role:
+    name: tomcat
+  vars:
+    tomcat_action: "restart"
+
+- name: Display UI deployment status
+  debug:
+    msg: "Platform UI deployed. Access URLs: Platform UI: {{ ui_env_vars.PLATFORM_ADMIN_URL }}, End-user UI: {{ ui_env_vars.ENDUSER_UI_URL }}"
+

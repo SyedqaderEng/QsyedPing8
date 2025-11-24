@@ -1,0 +1,18 @@
+---
+# Access Management Role - Main Tasks
+
+- name: Include installation tasks
+  include_tasks: install.yml
+
+- name: Include configuration tasks
+  include_tasks: configure.yml
+  when: am_deployment_mode | default('ds') == 'ds'
+
+- name: Include FBC configuration tasks
+  include_tasks: configure_fbc.yml
+  when: am_deployment_mode | default('ds') == 'fbc'
+
+- name: Include journey import
+  include_tasks: journeys.yml
+  when: am_import_journeys | default(true)
+

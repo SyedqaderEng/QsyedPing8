@@ -1,0 +1,4 @@
+---
+# Identity Management Role Variables
+# Most variables are defined in group_vars/idm.yml
+

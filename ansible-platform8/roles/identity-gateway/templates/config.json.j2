@@ -1,0 +1,44 @@
+{
+  "connectors": [
+    {
+      "type": "HttpClient",
+      "config": {
+        "name": "HttpClient",
+        "host": "{{ am_hostname }}",
+        "port": {{ tomcat_http_port }},
+        "connectTimeout": 10000,
+        "socketTimeout": 10000
+      }
+    }
+  ],
+  "heap": [
+    {
+      "name": "TlsOptions_1",
+      "type": "TlsOptions",
+      "config": {
+        "keyStore": {
+          "type": "KeyStore",
+          "file": "{{ ig_keystore_file }}",
+          "password": "file:{{ ig_keystore_pin_file }}"
+        },
+        "trustStore": {
+          "type": "KeyStore",
+          "file": "{{ am_truststore }}",
+          "password": "{{ truststore_password }}"
+        }
+      }
+    }
+  ],
+  "handler": {
+    "type": "Chain",
+    "config": {
+      "filters": [],
+      "handler": {
+        "type": "Router",
+        "name": "_router",
+        "baseURI": "http://{{ ig_hostname }}:{{ ig_http_port }}"
+      }
+    }
+  }
+}
+

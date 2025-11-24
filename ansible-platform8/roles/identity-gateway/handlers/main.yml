@@ -1,0 +1,11 @@
+---
+# Identity Gateway Handlers
+
+- name: restart ig
+  shell: |
+    pkill -f '[i]dentity-gateway' || true
+    sleep 5
+    {{ ig_dir }}/bin/start.sh &
+  async: 10
+  poll: 2
+

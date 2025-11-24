@@ -1,0 +1,57 @@
+---
+# AM Configuration Tasks (DS-based mode)
+
+- name: Include Amster setup
+  include_tasks: amster.yml
+
+- name: Run AM bootstrap (install-openam)
+  shell: |
+    {{ amster_dir }}/amster <<EOF
+    install-openam \
+      --serverUrl {{ am_url }} \
+      --adminPwd {{ am_admin_password }} \
+      --acceptLicense \
+      --pwdEncKey {{ ds_deployment_id }} \
+      --cfgStoreDirMgr '{{ ds_config_admin_dn }}' \
+      --cfgStoreDirMgrPwd {{ ds_config_admin_password | default(default_password) }} \
+      --cfgStore dirServer \
+      --cfgStoreHost {{ ds_amconfig_server }} \
+      --cfgStoreAdminPort {{ ds_amconfig_server_admin_connector_port }} \
+      --cfgStorePort {{ ds_amconfig_server_ldaps_port }} \
+      --cfgStoreRootSuffix ou=am-config \
+      --cfgStoreSsl SSL \
+      --userStoreDirMgr '{{ ds_idrepo_admin_dn }}' \
+      --userStoreDirMgrPwd {{ ds_idrepo_admin_password | default(default_password) }} \
+      --userStoreHost {{ ds_idrepo_server }} \
+      --userStoreType LDAPv3ForOpenDS \
+      --userStorePort {{ ds_idrepo_server_ldaps_port }} \
+      --userStoreSsl SSL \
+      --userStoreRootSuffix {{ ds_idrepo_dn }}
+    
+    :exit
+    EOF
+  args:
+    chdir: "{{ amster_dir }}"
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: not am_deployed.stat.exists or am_force_reinstall | default(false)
+  register: am_bootstrap
+  changed_when: "'already configured' not in am_bootstrap.stderr"
+  failed_when: am_bootstrap.rc != 0 and 'already configured' not in am_bootstrap.stderr
+
+- name: Configure CTS data store
+  shell: |
+    {{ amster_dir }}/amster <<EOF
+    connect -k {{ am_dir }}/security/keys/amster/amster_rsa {{ am_url }}
+    update DefaultCtsDataStoreProperties --global --body '{"amconfig.org.forgerock.services.cts.store.common.section":{"org.forgerock.services.cts.store.location":"external","org.forgerock.services.cts.store.root.suffix":"ou=famrecords,ou=openam-session,ou=tokens","org.forgerock.services.cts.store.max.connections":"65","org.forgerock.services.cts.store.page.size":"0","org.forgerock.services.cts.store.vlv.page.size":"1000"},"amconfig.org.forgerock.services.cts.store.external.section":{"org.forgerock.services.cts.store.password":"{{ ds_cts_admin_password | default(default_password) }}","org.forgerock.services.cts.store.loginid":"{{ ds_cts_admin_dn }}","org.forgerock.services.cts.store.heartbeat":"10","org.forgerock.services.cts.store.ssl.enabled":"true","org.forgerock.services.cts.store.directory.name":"{{ ds_cts_server }}:{{ ds_cts_server_ldaps_port }}","org.forgerock.services.cts.store.affinity.enabled":true}}'
+    :exit
+    EOF
+  args:
+    chdir: "{{ amster_dir }}"
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: am_deployed.stat.exists or am_bootstrap.changed
+  register: cts_config
+  failed_when: cts_config.rc != 0
+  changed_when: cts_config.rc == 0
+

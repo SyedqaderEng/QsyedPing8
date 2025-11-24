@@ -1,0 +1,16 @@
+{
+  "handler": {
+    "type": "Chain",
+    "config": {
+      "filters": [],
+      "handler": {
+        "type": "ReverseProxyHandler",
+        "config": {
+          "baseURI": "http://{{ am_hostname }}:{{ tomcat_http_port }}/{{ am_context }}"
+        }
+      }
+    }
+  },
+  "condition": "${matches(request.uri.path, '^/{{ am_context }}')}"
+}
+

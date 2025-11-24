@@ -1,0 +1,28 @@
+---
+# IG Configuration Tasks
+
+- name: Deploy IG config.json
+  template:
+    src: config.json.j2
+    dest: "{{ ig_config }}/config.json"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+
+- name: Deploy IG admin.json
+  template:
+    src: admin.json.j2
+    dest: "{{ ig_config }}/admin.json"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+
+- name: Deploy logback.xml if exists
+  template:
+    src: logback.xml.j2
+    dest: "{{ ig_config }}/logback.xml"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+  when: ig_logback_template_exists | default(false)
+

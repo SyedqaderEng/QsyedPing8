@@ -1,0 +1,226 @@
+---
+# DS Installation Tasks
+
+- name: Check for running DS processes
+  shell: ps -ef | grep 'org.opends.server.core.DirectoryServer' | grep -v grep | awk '{print $2}' || true
+  register: ds_processes
+  changed_when: false
+  failed_when: false
+
+- name: Kill existing DS processes
+  shell: kill -9 {{ ds_processes.stdout_lines | join(' ') }}
+  when: ds_processes.stdout_lines | length > 0
+  failed_when: false
+
+- name: Check if DS Config Store exists
+  stat:
+    path: "{{ ds_config_dir }}/opendj"
+  register: ds_config_exists
+
+- name: Check if DS CTS Store exists
+  stat:
+    path: "{{ ds_cts_dir }}/opendj"
+  register: ds_cts_exists
+
+- name: Check if DS IDRepo Store exists
+  stat:
+    path: "{{ ds_idrepo_dir }}/opendj"
+  register: ds_idrepo_exists
+
+- name: Create backup of existing DS instances
+  archive:
+    path: "{{ item.value }}/opendj"
+    dest: "{{ backup_base_dir }}/ds-{{ item.key }}-backup-{{ ansible_date_time.epoch }}.tar.gz"
+    format: gz
+  when: item.value.stat.exists
+  loop:
+    - { key: "config", value: ds_config_exists }
+    - { key: "cts", value: ds_cts_exists }
+    - { key: "idrepo", value: ds_idrepo_exists }
+  failed_when: false
+
+- name: Remove existing DS Config Store (if reinstalling)
+  file:
+    path: "{{ ds_config_dir }}"
+    state: absent
+  when: 
+    - ds_config_exists.stat.exists
+    - ds_force_reinstall | default(false)
+
+- name: Remove existing DS CTS Store (if reinstalling)
+  file:
+    path: "{{ ds_cts_dir }}"
+    state: absent
+  when:
+    - ds_cts_exists.stat.exists
+    - ds_force_reinstall | default(false)
+
+- name: Remove existing DS IDRepo Store (if reinstalling)
+  file:
+    path: "{{ ds_idrepo_dir }}"
+    state: absent
+  when:
+    - ds_idrepo_exists.stat.exists
+    - ds_force_reinstall | default(false)
+
+- name: Verify DS ZIP file exists
+  stat:
+    path: "{{ ds_zip_file }}"
+  register: ds_zip_file_stat
+
+- name: Fail if DS ZIP file not found
+  fail:
+    msg: "DS ZIP file not found at {{ ds_zip_file }}. Please place DS-{{ ds_version }}.zip in software/ds/ directory."
+  when: not ds_zip_file_stat.stat.exists
+
+- name: Install DS Config Store
+  block:
+    - name: Create DS Config directory
+      file:
+        path: "{{ ds_config_dir }}"
+        state: directory
+        owner: "{{ install_user }}"
+        group: "{{ install_user }}"
+        mode: '0755'
+
+    - name: Extract DS ZIP to Config directory
+      unarchive:
+        src: "{{ ds_zip_file }}"
+        dest: "{{ ds_config_dir }}"
+        remote_src: false
+        owner: "{{ install_user }}"
+        group: "{{ install_user }}"
+      when: not ds_config_exists.stat.exists or ds_force_reinstall | default(false)
+
+    - name: Run DS Config Store setup
+      shell: |
+        ./setup \
+          --rootUserDN "{{ ds_admin_dn }}" \
+          --rootUserPassword "{{ ds_admin_password }}" \
+          --monitorUserPassword "{{ ds_admin_password }}" \
+          --hostname "{{ ds_amconfig_server }}" \
+          --ldapPort {{ ds_amconfig_server_ldap_port }} \
+          --ldapsPort {{ ds_amconfig_server_ldaps_port }} \
+          --httpPort {{ ds_amconfig_server_http_port }} \
+          --httpsPort {{ ds_amconfig_server_https_port }} \
+          --adminConnectorPort {{ ds_amconfig_server_admin_connector_port }} \
+          --deploymentId "{{ ds_deployment_id }}" \
+          --deploymentIdPassword "{{ ds_deployment_id_password | default(ds_admin_password) }}" \
+          --profile am-config \
+          --set am-config/amConfigAdminPassword:"{{ ds_config_admin_password | default(default_password) }}" \
+          --start \
+          --quiet \
+          --acceptLicense
+      args:
+        chdir: "{{ ds_config_dir }}/opendj"
+      when: not ds_config_exists.stat.exists or ds_force_reinstall | default(false)
+      environment:
+        JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: not ds_config_exists.stat.exists or ds_force_reinstall | default(false)
+
+- name: Install DS CTS Store
+  block:
+    - name: Create DS CTS directory
+      file:
+        path: "{{ ds_cts_dir }}"
+        state: directory
+        owner: "{{ install_user }}"
+        group: "{{ install_user }}"
+        mode: '0755'
+
+    - name: Extract DS ZIP to CTS directory
+      unarchive:
+        src: "{{ ds_zip_file }}"
+        dest: "{{ ds_cts_dir }}"
+        remote_src: false
+        owner: "{{ install_user }}"
+        group: "{{ install_user }}"
+      when: not ds_cts_exists.stat.exists or ds_force_reinstall | default(false)
+
+    - name: Run DS CTS Store setup
+      shell: |
+        ./setup \
+          --rootUserDN "{{ ds_admin_dn }}" \
+          --rootUserPassword "{{ ds_admin_password }}" \
+          --monitorUserPassword "{{ ds_admin_password }}" \
+          --hostname "{{ ds_cts_server }}" \
+          --ldapPort {{ ds_cts_server_ldap_port }} \
+          --ldapsPort {{ ds_cts_server_ldaps_port }} \
+          --httpPort {{ ds_cts_server_http_port }} \
+          --httpsPort {{ ds_cts_server_https_port }} \
+          --adminConnectorPort {{ ds_cts_server_admin_connector_port }} \
+          --deploymentId "{{ ds_deployment_id }}" \
+          --deploymentIdPassword "{{ ds_deployment_id_password | default(ds_admin_password) }}" \
+          --profile am-cts \
+          --set am-cts/amCtsAdminPassword:"{{ ds_cts_admin_password | default(default_password) }}" \
+          --set am-cts/tokenExpirationPolicy:am-sessions-only \
+          --start \
+          --quiet \
+          --acceptLicense
+      args:
+        chdir: "{{ ds_cts_dir }}/opendj"
+      when: not ds_cts_exists.stat.exists or ds_force_reinstall | default(false)
+      environment:
+        JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: not ds_cts_exists.stat.exists or ds_force_reinstall | default(false)
+
+- name: Install DS IDRepo Store
+  block:
+    - name: Create DS IDRepo directory
+      file:
+        path: "{{ ds_idrepo_dir }}"
+        state: directory
+        owner: "{{ install_user }}"
+        group: "{{ install_user }}"
+        mode: '0755'
+
+    - name: Extract DS ZIP to IDRepo directory
+      unarchive:
+        src: "{{ ds_zip_file }}"
+        dest: "{{ ds_idrepo_dir }}"
+        remote_src: false
+        owner: "{{ install_user }}"
+        group: "{{ install_user }}"
+      when: not ds_idrepo_exists.stat.exists or ds_force_reinstall | default(false)
+
+    - name: Run DS IDRepo Store setup
+      shell: |
+        ./setup \
+          --rootUserDN "{{ ds_admin_dn }}" \
+          --rootUserPassword "{{ ds_admin_password }}" \
+          --monitorUserPassword "{{ ds_admin_password }}" \
+          --hostname "{{ ds_idrepo_server }}" \
+          --ldapPort {{ ds_idrepo_server_ldap_port }} \
+          --ldapsPort {{ ds_idrepo_server_ldaps_port }} \
+          --httpPort {{ ds_idrepo_server_http_port }} \
+          --httpsPort {{ ds_idrepo_server_https_port }} \
+          --adminConnectorPort {{ ds_idrepo_server_admin_connector_port }} \
+          --enableStartTLS \
+          --deploymentId "{{ ds_deployment_id }}" \
+          --deploymentIdPassword "{{ ds_deployment_id_password | default(ds_admin_password) }}" \
+          --profile am-identity-store:{{ ds_version }} \
+          --set am-identity-store/amIdentityStoreAdminPassword:"{{ ds_idrepo_admin_password | default(default_password) }}" \
+          --profile idm-repo \
+          --set idm-repo/domain:{{ ds_repo_suffix }} \
+          --start \
+          --quiet \
+          --acceptLicense
+      args:
+        chdir: "{{ ds_idrepo_dir }}/opendj"
+      when: not ds_idrepo_exists.stat.exists or ds_force_reinstall | default(false)
+      environment:
+        JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: not ds_idrepo_exists.stat.exists or ds_force_reinstall | default(false)
+
+- name: Wait for DS instances to be ready
+  wait_for:
+    port: "{{ item }}"
+    host: "{{ ansible_default_ipv4.address | default('localhost') }}"
+    delay: 5
+    timeout: 60
+  loop:
+    - "{{ ds_amconfig_server_ldaps_port }}"
+    - "{{ ds_cts_server_ldaps_port }}"
+    - "{{ ds_idrepo_server_ldaps_port }}"
+  ignore_errors: yes
+

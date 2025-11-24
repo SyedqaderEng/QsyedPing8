@@ -1,0 +1,4 @@
+#!/bin/bash
+CATALINA_OPTS="-Djavax.net.ssl.trustStore={{ am_truststore }} -Djavax.net.ssl.trustStorePassword={{ truststore_password }} -Djavax.net.ssl.trustStoreType=jks"
+export CATALINA_OPTS
+

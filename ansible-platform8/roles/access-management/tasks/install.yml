@@ -1,0 +1,121 @@
+---
+# AM Installation Tasks
+
+- name: Check if AM is already deployed
+  stat:
+    path: "{{ am_dir }}"
+  register: am_deployed
+
+- name: Check if AM WAR is deployed
+  stat:
+    path: "{{ tomcat_webapps_dir }}/{{ am_context }}"
+  register: am_war_deployed
+
+- name: Backup existing AM configuration (if exists)
+  block:
+    - name: Export AM configuration using Amster
+      shell: |
+        {{ amster_dir }}/amster export --path {{ backup_base_dir }}/am-config-backup-{{ ansible_date_time.epoch }}
+      when: 
+        - am_deployed.stat.exists
+        - amster_dir is defined
+      failed_when: false
+      changed_when: false
+  when: am_deployed.stat.exists and not (am_force_reinstall | default(false))
+
+- name: Stop Tomcat
+  include_role:
+    name: tomcat
+  vars:
+    tomcat_action: "stop"
+
+- name: Remove old AM deployment (if force reinstall)
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ tomcat_webapps_dir }}/{{ am_context }}"
+    - "{{ tomcat_webapps_dir }}/{{ am_context }}.war"
+    - "{{ am_dir }}"
+    - "{{ am_cfg_dir }}"
+    - "{{ am_fbc_dir }}"
+  when: am_force_reinstall | default(false)
+
+- name: Verify AM WAR file exists
+  stat:
+    path: "{{ am_war }}"
+  register: am_war_file_stat
+
+- name: Fail if AM WAR not found
+  fail:
+    msg: "AM WAR file not found at {{ am_war }}. Please place AM-{{ am_version }}.war in software/am/ directory."
+  when: not am_war_file_stat.stat.exists
+
+- name: Deploy AM WAR file
+  copy:
+    src: "{{ am_war }}"
+    dest: "{{ tomcat_am_war }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+  notify: restart tomcat
+
+- name: Wait for WAR file to be copied
+  wait_for:
+    path: "{{ tomcat_am_war }}"
+    state: present
+    timeout: 30
+
+- name: Verify WAR file size
+  stat:
+    path: "{{ tomcat_am_war }}"
+  register: deployed_war_stat
+
+- name: Compare WAR file sizes
+  assert:
+    that:
+      - deployed_war_stat.stat.size == am_war_file_stat.stat.size
+    fail_msg: "WAR file size mismatch. Source: {{ am_war_file_stat.stat.size }}, Deployed: {{ deployed_war_stat.stat.size }}"
+    success_msg: "WAR file deployed successfully ({{ deployed_war_stat.stat.size }} bytes)"
+
+- name: Deploy setenv.sh for DS-based mode
+  template:
+    src: setenv.sh.j2
+    dest: "{{ am_setenv }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+  when: am_deployment_mode | default('ds') == 'ds'
+  notify: restart tomcat
+
+- name: Deploy setenv.sh for FBC mode
+  template:
+    src: setenv-fbc.sh.j2
+    dest: "{{ am_setenv }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+  when: am_deployment_mode | default('ds') == 'fbc'
+  notify: restart tomcat
+
+- name: Start Tomcat
+  include_role:
+    name: tomcat
+  vars:
+    tomcat_action: "start"
+
+- name: Wait for AM to deploy
+  wait_for:
+    url: "{{ am_url }}/json/serverinfo/*"
+    status_code: [200, 302]
+    timeout: 300
+  delegate_to: localhost
+  register: am_ready
+  until: am_ready.status == 200 or am_ready.status == 302
+  retries: 60
+  delay: 5
+
+- name: Display AM deployment status
+  debug:
+    msg: "AM is deployed and accessible at {{ am_url }}"
+

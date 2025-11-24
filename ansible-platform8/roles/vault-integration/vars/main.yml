@@ -1,0 +1,12 @@
+---
+# Vault Integration Variables
+
+# Vault path structure
+vault_secret_base_path: "platform8/{{ vault_environment }}"
+
+# Secret paths
+vault_ds_secrets_path: "{{ vault_secret_base_path }}/ds"
+vault_am_secrets_path: "{{ vault_secret_base_path }}/am"
+vault_idm_secrets_path: "{{ vault_secret_base_path }}/idm"
+vault_ig_secrets_path: "{{ vault_secret_base_path }}/ig"
+

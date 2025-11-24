@@ -1,0 +1,125 @@
+---
+# Certificate Management Tasks
+
+- name: Prepare AM truststore directory
+  file:
+    path: "{{ am_truststore_folder }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+
+- name: Find Java cacerts file
+  find:
+    paths:
+      - "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}/lib/security"
+      - /etc/ssl/certs/java
+      - /usr/lib/jvm/java-*/lib/security
+    patterns: cacerts
+    file_type: file
+  register: java_cacerts
+  failed_when: false
+
+- name: Set Java cacerts path
+  set_fact:
+    java_cacerts_path: "{{ java_cacerts.files[0].path if java_cacerts.files | length > 0 else '/etc/ssl/certs/java/cacerts' }}"
+
+- name: Copy Java cacerts to AM truststore
+  copy:
+    src: "{{ java_cacerts_path }}"
+    dest: "{{ am_truststore }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+  when: not (am_truststore_stat is defined and am_truststore_stat.stat.exists)
+
+- name: Check if AM truststore exists
+  stat:
+    path: "{{ am_truststore }}"
+  register: am_truststore_stat
+
+- name: Export DS Config Store CA certificate
+  shell: |
+    ./bin/dskeymgr export-ca-cert \
+      --deploymentId "{{ ds_deployment_id }}" \
+      --deploymentIdPassword "{{ ds_deployment_id_password | default(ds_admin_password) }}" \
+      --outputFile "{{ am_truststore_folder }}/ds-config-ca-cert.pem"
+  args:
+    chdir: "{{ ds_config_dir }}/opendj"
+  when: ds_config_exists.stat.exists
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+
+- name: Export DS CTS Store CA certificate
+  shell: |
+    ./bin/dskeymgr export-ca-cert \
+      --deploymentId "{{ ds_deployment_id }}" \
+      --deploymentIdPassword "{{ ds_deployment_id_password | default(ds_admin_password) }}" \
+      --outputFile "{{ am_truststore_folder }}/ds-cts-ca-cert.pem"
+  args:
+    chdir: "{{ ds_cts_dir }}/opendj"
+  when: ds_cts_exists.stat.exists
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+
+- name: Export DS IDRepo Store CA certificate
+  shell: |
+    ./bin/dskeymgr export-ca-cert \
+      --deploymentId "{{ ds_deployment_id }}" \
+      --deploymentIdPassword "{{ ds_deployment_id_password | default(ds_admin_password) }}" \
+      --outputFile "{{ am_truststore_folder }}/ds-repo-ca-cert.pem"
+  args:
+    chdir: "{{ ds_idrepo_dir }}/opendj"
+  when: ds_idrepo_exists.stat.exists
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+
+- name: Import DS Config CA certificate into AM truststore
+  shell: |
+    keytool -importcert -noprompt \
+      -file "{{ am_truststore_folder }}/ds-config-ca-cert.pem" \
+      -keystore "{{ am_truststore }}" \
+      -storepass "{{ truststore_password }}" \
+      -alias ds-config-ca-cert
+  when: 
+    - ds_config_exists.stat.exists
+    - (stat_result is not defined) or (not stat_result.stat.exists)
+  register: import_config_cert
+  changed_when: import_config_cert.rc == 0
+  failed_when: import_config_cert.rc != 0 and 'already exists' not in import_config_cert.stderr
+
+- name: Import DS CTS CA certificate into AM truststore
+  shell: |
+    keytool -importcert -noprompt \
+      -file "{{ am_truststore_folder }}/ds-cts-ca-cert.pem" \
+      -keystore "{{ am_truststore }}" \
+      -storepass "{{ truststore_password }}" \
+      -alias ds-cts-ca-cert
+  when: 
+    - ds_cts_exists.stat.exists
+    - (stat_result is not defined) or (not stat_result.stat.exists)
+  register: import_cts_cert
+  changed_when: import_cts_cert.rc == 0
+  failed_when: import_cts_cert.rc != 0 and 'already exists' not in import_cts_cert.stderr
+
+- name: Import DS IDRepo CA certificate into AM truststore
+  shell: |
+    keytool -importcert -noprompt \
+      -file "{{ am_truststore_folder }}/ds-repo-ca-cert.pem" \
+      -keystore "{{ am_truststore }}" \
+      -storepass "{{ truststore_password }}" \
+      -alias ds-repo-ca-cert
+  when: 
+    - ds_idrepo_exists.stat.exists
+    - (stat_result is not defined) or (not stat_result.stat.exists)
+  register: import_repo_cert
+  changed_when: import_repo_cert.rc == 0
+  failed_when: import_repo_cert.rc != 0 and 'already exists' not in import_repo_cert.stderr
+
+- name: Set truststore ownership
+  file:
+    path: "{{ am_truststore }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+

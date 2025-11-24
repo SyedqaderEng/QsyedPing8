@@ -1,0 +1,9 @@
+---
+# Access Management Handlers
+
+- name: restart tomcat
+  include_role:
+    name: tomcat
+  vars:
+    tomcat_action: "restart"
+

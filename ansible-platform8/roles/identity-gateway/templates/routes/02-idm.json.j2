@@ -1,0 +1,16 @@
+{
+  "handler": {
+    "type": "Chain",
+    "config": {
+      "filters": [],
+      "handler": {
+        "type": "ReverseProxyHandler",
+        "config": {
+          "baseURI": "http://{{ idm_hostname }}:{{ boot_port_http }}/openidm"
+        }
+      }
+    }
+  },
+  "condition": "${matches(request.uri.path, '^/openidm')}"
+}
+

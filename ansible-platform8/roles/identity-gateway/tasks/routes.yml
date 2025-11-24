@@ -1,0 +1,13 @@
+---
+# IG Route Deployment
+
+- name: Deploy IG route files
+  template:
+    src: "routes/{{ item }}.j2"
+    dest: "{{ ig_routes }}/{{ item }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+  loop: "{{ ig_route_files }}"
+  when: ig_route_files is defined
+

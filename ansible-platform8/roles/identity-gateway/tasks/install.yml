@@ -1,0 +1,96 @@
+---
+# IG Installation Tasks
+
+- name: Check for running IG process
+  shell: pgrep -f '[i]dentity-gateway' || true
+  register: ig_process
+  changed_when: false
+  failed_when: false
+
+- name: Stop IG if running
+  shell: pkill -f '[i]dentity-gateway' || true
+  when: ig_process.stdout | length > 0
+  failed_when: false
+
+- name: Remove old IG installation (if force reinstall)
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ ig_key_dir }}"
+    - "{{ ig_dir }}"
+    - "{{ ig_cfg_dir }}"
+  when: ig_force_reinstall | default(false)
+
+- name: Verify IG ZIP file exists
+  stat:
+    path: "{{ ig_zip }}"
+  register: ig_zip_file_stat
+
+- name: Fail if IG ZIP not found
+  fail:
+    msg: "IG ZIP file not found at {{ ig_zip }}. Please place PingGateway-{{ ig_version }}.zip in software/ig/ directory."
+  when: not ig_zip_file_stat.stat.exists
+
+- name: Create IG key directory
+  file:
+    path: "{{ ig_key_dir }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0700'
+
+- name: Create keystore PIN file
+  copy:
+    content: "{{ ig_keystore_password | default(default_password) }}\n"
+    dest: "{{ ig_keystore_pin_file }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0600'
+
+- name: Generate TLS key pair
+  shell: |
+    {{ dskeymgr }} create-tls-key-pair \
+      --deploymentId "{{ ds_deployment_id }}" \
+      --deploymentIdPassword "{{ ds_deployment_id_password | default(default_password) }}" \
+      --keyStoreFile "{{ ig_keystore_file }}" \
+      --keyStorePassword:file "{{ ig_keystore_pin_file }}" \
+      --hostname "{{ ig_hostname }}" \
+      --subjectDn "CN={{ ig_hostname }},O=ForgeRock"
+  args:
+    chdir: "{{ ds_idrepo_dir }}/opendj"
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+
+- name: Export CA certificate
+  shell: |
+    {{ dskeymgr }} export-ca-cert \
+      --deploymentId "{{ ds_deployment_id }}" \
+      --deploymentIdPassword "{{ ds_deployment_id_password | default(default_password) }}" \
+      --outputFile "{{ ig_ca_cert_file }}"
+  args:
+    chdir: "{{ ds_idrepo_dir }}/opendj"
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+
+- name: Extract IG ZIP
+  unarchive:
+    src: "{{ ig_zip }}"
+    dest: "{{ base_install_dir }}"
+    remote_src: false
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+
+- name: Create IG config directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0755'
+  loop:
+    - "{{ ig_cfg_dir }}"
+    - "{{ ig_config }}"
+    - "{{ ig_routes }}"
+    - "{{ ig_tmp_dir }}"
+

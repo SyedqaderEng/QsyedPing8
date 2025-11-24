@@ -1,0 +1,56 @@
+---
+# Prerequisites Check
+
+- name: Check if Java is installed
+  command: java -version
+  register: java_check
+  changed_when: false
+  failed_when: false
+
+- name: Verify Java version is 21 or higher
+  assert:
+    that:
+      - java_check.rc == 0
+    fail_msg: "Java is not installed or not in PATH. Please install Java 21+."
+    success_msg: "Java is installed and accessible."
+
+- name: Get Java version
+  shell: java -version 2>&1 | head -n 1
+  register: java_version_output
+  changed_when: false
+
+- name: Display Java version
+  debug:
+    msg: "Java version: {{ java_version_output.stdout }}"
+
+- name: Check if Tomcat is installed
+  stat:
+    path: "{{ tomcat_dir }}"
+  register: tomcat_dir_check
+
+- name: Verify Tomcat directory exists
+  assert:
+    that:
+      - tomcat_dir_check.stat.exists
+    fail_msg: "Tomcat is not installed at {{ tomcat_dir }}. Please install Tomcat 10.x."
+    success_msg: "Tomcat directory found at {{ tomcat_dir }}."
+
+- name: Check if Tomcat systemd service exists
+  stat:
+    path: /etc/systemd/system/tomcat.service
+  register: tomcat_service_check
+  failed_when: false
+
+- name: Display Tomcat status
+  debug:
+    msg: "Tomcat service {{ 'exists' if tomcat_service_check.stat.exists else 'not found (may use startup.sh directly)' }}"
+
+- name: Check available disk space
+  shell: df -h {{ base_install_dir }} | tail -1 | awk '{print $4}'
+  register: disk_space
+  changed_when: false
+
+- name: Display available disk space
+  debug:
+    msg: "Available disk space: {{ disk_space.stdout }}"
+

@@ -1,0 +1,29 @@
+---
+# Tomcat Handlers
+
+- name: restart tomcat
+  systemd:
+    name: tomcat
+    state: restarted
+  when: tomcat_systemd_service.stat.exists | default(false)
+  ignore_errors: yes
+
+- name: restart tomcat direct
+  shell: |
+    {{ tomcat_bin_dir }}/shutdown.sh || true
+    sleep 5
+    {{ tomcat_bin_dir }}/startup.sh
+  when: not (tomcat_systemd_service.stat.exists | default(false))
+  async: 10
+  poll: 2
+
+- name: stop tomcat
+  set_fact:
+    tomcat_action: "stop"
+  listen: "stop tomcat"
+
+- name: start tomcat
+  set_fact:
+    tomcat_action: "start"
+  listen: "start tomcat"
+

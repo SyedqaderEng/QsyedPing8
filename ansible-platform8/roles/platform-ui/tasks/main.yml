@@ -1,0 +1,6 @@
+---
+# Platform UI Role - Main Tasks
+
+- name: Include installation tasks
+  include_tasks: install.yml
+

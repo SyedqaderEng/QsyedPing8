@@ -1,0 +1,29 @@
+---
+# IG Service Management
+
+- name: Start IG
+  shell: "{{ ig_dir }}/bin/start.sh &"
+  async: 10
+  poll: 2
+  changed_when: true
+
+- name: Wait for IG to start
+  wait_for:
+    port: "{{ ig_http_port }}"
+    host: "{{ ig_hostname }}"
+    delay: 10
+    timeout: 120
+
+- name: Check IG health
+  uri:
+    url: "http://{{ ig_hostname }}:{{ ig_http_port }}/openig/ping"
+    method: GET
+  register: ig_health
+  until: ig_health.status == 200
+  retries: 30
+  delay: 5
+
+- name: Display IG status
+  debug:
+    msg: "IG is running and healthy at http://{{ ig_hostname }}:{{ ig_http_port }}"
+

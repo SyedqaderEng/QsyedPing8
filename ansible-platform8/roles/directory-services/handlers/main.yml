@@ -1,0 +1,27 @@
+---
+# Directory Services Handlers
+
+- name: restart ds config
+  shell: |
+    {{ ds_config_dir }}/opendj/bin/stop-ds --quiet || true
+    sleep 2
+    {{ ds_config_dir }}/opendj/bin/start-ds --quiet
+  async: 10
+  poll: 2
+
+- name: restart ds cts
+  shell: |
+    {{ ds_cts_dir }}/opendj/bin/stop-ds --quiet || true
+    sleep 2
+    {{ ds_cts_dir }}/opendj/bin/start-ds --quiet
+  async: 10
+  poll: 2
+
+- name: restart ds idrepo
+  shell: |
+    {{ ds_idrepo_dir }}/opendj/bin/stop-ds --quiet || true
+    sleep 2
+    {{ ds_idrepo_dir }}/opendj/bin/start-ds --quiet
+  async: 10
+  poll: 2
+

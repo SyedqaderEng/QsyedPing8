@@ -1,0 +1,13 @@
+---
+# Common Role - Main Tasks
+# Handles prerequisites, user creation, and directory setup
+
+- name: Include prerequisites check
+  include_tasks: prerequisites.yml
+
+- name: Include user setup
+  include_tasks: user_setup.yml
+
+- name: Include directory setup
+  include_tasks: directory_setup.yml
+

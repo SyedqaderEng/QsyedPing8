@@ -1,0 +1,11 @@
+---
+# Identity Management Handlers
+
+- name: restart idm
+  shell: |
+    {{ idm_extract_dir }}/shutdown.sh || true
+    sleep 5
+    {{ idm_extract_dir }}/startup.sh &
+  async: 10
+  poll: 2
+

@@ -1,0 +1,15 @@
+---
+# Identity Gateway Role - Main Tasks
+
+- name: Include installation tasks
+  include_tasks: install.yml
+
+- name: Include configuration tasks
+  include_tasks: configure.yml
+
+- name: Include route deployment
+  include_tasks: routes.yml
+
+- name: Include service startup
+  include_tasks: service.yml
+

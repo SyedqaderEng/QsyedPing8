@@ -1,0 +1,31 @@
+---
+# User Setup
+
+- name: Check if installation user exists
+  getent:
+    database: passwd
+    key: "{{ install_user }}"
+  register: user_exists
+  failed_when: false
+
+- name: Create installation user
+  user:
+    name: "{{ install_user }}"
+    state: present
+    shell: /bin/bash
+    create_home: yes
+    home: "{{ install_user_home }}"
+  when: not user_exists.exists
+
+- name: Ensure installation user has sudo access
+  lineinfile:
+    path: /etc/sudoers.d/{{ install_user }}
+    line: "{{ install_user }} ALL=(ALL) NOPASSWD: ALL"
+    create: yes
+    validate: 'visudo -cf %s'
+    mode: '0440'
+
+- name: Display installation user information
+  debug:
+    msg: "Installation user: {{ install_user }} ({{ 'created' if not user_exists.exists else 'already exists' }})"
+

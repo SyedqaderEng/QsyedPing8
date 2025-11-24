@@ -1,0 +1,67 @@
+---
+# IDM Configuration Tasks
+
+- name: Remove default repo.ds.json if exists
+  file:
+    path: "{{ idm_config_dir }}/repo.ds.json"
+    state: absent
+  failed_when: false
+
+- name: Import DS certificate into IDM truststore
+  shell: |
+    keytool -importcert -noprompt \
+      -alias ds-repo-ca-cert \
+      -keystore "{{ idm_truststore }}" \
+      -storepass:file "{{ idm_storepass_file }}" \
+      -file "{{ idm_cert_file }}"
+  when: idm_cert_file_stat is defined and idm_cert_file_stat.stat.exists
+  register: import_cert
+  changed_when: import_cert.rc == 0
+  failed_when: import_cert.rc != 0 and 'already exists' not in import_cert.stderr
+
+- name: Check if DS certificate file exists
+  stat:
+    path: "{{ idm_cert_file }}"
+  register: idm_cert_file_stat
+
+- name: Deploy IDM configuration files
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ idm_config_dir }}/{{ item }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+  loop: "{{ idm_config_files }}"
+  when: item != 'system.properties'
+
+- name: Deploy boot.properties
+  template:
+    src: resolver/boot.properties.j2
+    dest: "{{ boot_file }}"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0644'
+
+- name: Start IDM
+  shell: "{{ idm_extract_dir }}/startup.sh &"
+  async: 10
+  poll: 2
+  changed_when: true
+
+- name: Wait for IDM to start
+  wait_for:
+    port: "{{ boot_port_http }}"
+    host: "{{ boot_host }}"
+    delay: 10
+    timeout: 120
+
+- name: Check IDM logs for errors
+  shell: tail -n 50 "{{ idm_logs_dir }}/openidm0.log" || true
+  register: idm_logs
+  changed_when: false
+  failed_when: false
+
+- name: Display IDM startup status
+  debug:
+    msg: "IDM is starting. Check logs at {{ idm_logs_dir }}/openidm0.log"
+

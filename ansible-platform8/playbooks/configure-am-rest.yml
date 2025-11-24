@@ -1,0 +1,66 @@
+---
+# Configure AM via REST API Playbook
+# Applies additional AM configuration using REST API calls
+
+- name: Configure AM via REST API
+  hosts: access_management
+  become: no
+  gather_facts: yes
+
+  vars:
+    am_rest_host: "{{ am_url }}"
+    am_rest_admin_user: "{{ am_admin_username }}"
+    # am_rest_admin_password: Retrieved from Vault
+
+  tasks:
+    - name: Login to AM and get SSO token
+      uri:
+        url: "{{ am_rest_host }}/json/realms/root/authenticate"
+        method: POST
+        headers:
+          Content-Type: "application/json"
+          Accept-API-Version: "resource=2.0, protocol=1"
+          X-OpenAM-Username: "{{ am_rest_admin_user }}"
+          X-OpenAM-Password: "{{ am_admin_password }}"
+        body_format: json
+        body: {}
+        status_code: [200, 201]
+      register: am_login_response
+      no_log: true
+
+    - name: Extract SSO token
+      set_fact:
+        am_sso_token: "{{ am_login_response.json.tokenId }}"
+      no_log: true
+
+    - name: Create Alpha realm (if not exists)
+      uri:
+        url: "{{ am_rest_host }}/json/global-config/realms?_action=create"
+        method: POST
+        headers:
+          Accept: "application/json"
+          accept-api-version: "protocol=2.0,resource=1.0"
+          content-type: "application/json"
+          Cookie: "iPlanetDirectoryPro={{ am_sso_token }}"
+        body_format: json
+        body:
+          name: "alpha"
+          active: true
+          parentPath: "/"
+          aliases: []
+        status_code: [200, 201, 409]  # 409 if already exists
+      register: alpha_realm_result
+      failed_when: false
+
+    - name: Display Alpha realm creation result
+      debug:
+        msg: "Alpha realm {{ 'created' if alpha_realm_result.status in [200, 201] else 'already exists' }}"
+
+    # Add more REST API configuration tasks here as needed
+    # These can be converted from configure_am.sh script
+
+  post_tasks:
+    - name: Display REST configuration summary
+      debug:
+        msg: "AM REST API configuration completed."
+

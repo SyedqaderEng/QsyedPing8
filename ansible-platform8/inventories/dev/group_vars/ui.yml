@@ -1,0 +1,23 @@
+---
+# Platform UI Configuration - Dev Environment
+
+# UI Ports (for reference, actual access through IG)
+login_port: 8083
+admin_port: 8082
+enduser_port: 8888
+
+# UI Environment Variables for variable_replacement.sh
+ui_env_vars:
+  AM_URL: "https://{{ platform_hostname }}:{{ ig_https_port }}/{{ am_context }}"
+  AM_ADMIN_URL: "https://{{ platform_hostname }}:{{ ig_https_port }}/{{ am_context }}/ui-admin"
+  IDM_REST_URL: "https://{{ platform_hostname }}:{{ ig_https_port }}/openidm"
+  IDM_ADMIN_URL: "https://{{ platform_hostname }}:{{ ig_https_port }}/admin"
+  IDM_UPLOAD_URL: "https://{{ platform_hostname }}:{{ ig_https_port }}/upload"
+  IDM_EXPORT_URL: "https://{{ platform_hostname }}:{{ ig_https_port }}/export"
+  ENDUSER_UI_URL: "https://{{ platform_hostname }}:{{ ig_https_port }}/enduser-ui/"
+  PLATFORM_ADMIN_URL: "https://{{ platform_hostname }}:{{ ig_https_port }}/platform-ui/"
+  ENDUSER_CLIENT_ID: "end-user-ui"
+  ADMIN_CLIENT_ID: "idm-admin-ui"
+  THEME: "default"
+  PLATFORM_UI_LOCALE: "en"
+

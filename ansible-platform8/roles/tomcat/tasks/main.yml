@@ -1,0 +1,7 @@
+---
+# Tomcat Role - Main Tasks
+# Manages Tomcat service (assumes pre-installed)
+
+- name: Include service management
+  include_tasks: service.yml
+

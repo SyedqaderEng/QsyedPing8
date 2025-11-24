@@ -1,0 +1,67 @@
+---
+# AM FBC Configuration Tasks
+
+- name: Initialize FBC directory structure
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '{{ "0700" if "security" in item else "0755" }}'
+  loop:
+    - "{{ am_fbc_dir }}"
+    - "{{ am_fbc_dir }}/security"
+    - "{{ am_fbc_dir }}/security/keys"
+    - "{{ am_fbc_dir }}/security/keys/amster"
+    - "{{ am_fbc_dir }}/security/keystores"
+    - "{{ am_fbc_dir }}/config"
+    - "{{ am_fbc_dir }}/var"
+    - "{{ am_fbc_dir }}/var/audit"
+    - "{{ am_fbc_dir }}/var/debug"
+    - "{{ am_fbc_dir }}/var/stats"
+
+- name: Check if Amster keys exist in source
+  stat:
+    path: "{{ playbook_dir }}/../misc/keys/amster"
+  register: amster_keys_source
+
+- name: Deploy Amster keys for FBC
+  copy:
+    src: "{{ playbook_dir }}/../misc/keys/amster/"
+    dest: "{{ am_fbc_dir }}/security/keys/amster/"
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+    mode: '0600'
+  when: amster_keys_source.stat.exists
+
+- name: Set Amster keys directory permissions
+  file:
+    path: "{{ am_fbc_dir }}/security/keys/amster"
+    mode: '0700'
+    owner: "{{ install_user }}"
+    group: "{{ install_user }}"
+  when: amster_keys_source.stat.exists
+
+- name: Wait for FBC initialization
+  wait_for:
+    path: "{{ am_fbc_dir }}/config/boot.json"
+    timeout: 300
+  register: fbc_boot_json
+  until: fbc_boot_json.stat.exists
+  retries: 60
+  delay: 5
+  failed_when: false
+
+- name: Include Amster setup
+  include_tasks: amster.yml
+
+- name: Wait for AM FBC to be ready
+  uri:
+    url: "{{ am_url }}/json/serverinfo/*"
+    method: GET
+    status_code: [200, 302]
+  register: am_fbc_ready
+  until: am_fbc_ready.status in [200, 302]
+  retries: 60
+  delay: 5
+

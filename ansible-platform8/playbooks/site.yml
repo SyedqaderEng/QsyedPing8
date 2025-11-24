@@ -1,0 +1,13 @@
+---
+# Master Playbook - Site-wide deployment
+# Orchestrates deployment of all components
+
+- name: Platform8 IAM Complete Deployment
+  hosts: all
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: Include bootstrap playbook
+      include_playbook: bootstrap-platform8.yml
+

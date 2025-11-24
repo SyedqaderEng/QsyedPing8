@@ -1,0 +1,47 @@
+---
+# Directory Services (DS) Configuration - Dev Environment
+
+# DS Admin
+ds_admin_dn: "cn=Directory Manager"
+# ds_admin_password: Retrieved from Vault at platform8/dev/ds/admin_password
+# ds_deployment_id: Retrieved from Vault at platform8/dev/ds/deployment_id
+# ds_deployment_id_password: Retrieved from Vault at platform8/dev/ds/deployment_id_password
+
+# DS IDRepo Configuration
+ds_idrepo_server: "{{ amidmrepo_hostname }}"
+ds_idrepo_server_ldap_port: 2389
+ds_idrepo_server_ldaps_port: 2636
+ds_idrepo_server_http_port: 28081
+ds_idrepo_server_https_port: 28443
+ds_idrepo_server_admin_connector_port: 24444
+ds_idrepo_dn: "ou=identities"
+
+# DS Config Store Configuration
+ds_amconfig_server: "{{ amconfig_hostname }}"
+ds_amconfig_server_ldap_port: 3389
+ds_amconfig_server_ldaps_port: 3636
+ds_amconfig_server_http_port: 38081
+ds_amconfig_server_https_port: 38443
+ds_amconfig_server_admin_connector_port: 34444
+
+# DS CTS Configuration
+ds_cts_server: "{{ cts_hostname }}"
+ds_cts_server_ldap_port: 1389
+ds_cts_server_ldaps_port: 1636
+ds_cts_server_http_port: 18081
+ds_cts_server_https_port: 18443
+ds_cts_server_admin_connector_port: 14444
+
+# LDAP Bind
+ldap_bind_password: "{{ ds_admin_password | default(default_password) }}"
+
+# DS Admin Accounts
+ds_config_admin_dn: "uid=am-config,ou=admins,ou=am-config"
+ds_idrepo_admin_dn: "uid=am-identity-bind-account,ou=admins,{{ ds_idrepo_dn }}"
+ds_cts_admin_dn: "uid=openam_cts,ou=admins,ou=famrecords,ou=openam-session,ou=tokens"
+
+# Passwords (from Vault)
+# ds_config_admin_password: Retrieved from Vault
+# ds_idrepo_admin_password: Retrieved from Vault
+# ds_cts_admin_password: Retrieved from Vault
+

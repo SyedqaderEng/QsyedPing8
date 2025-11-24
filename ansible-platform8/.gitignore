@@ -1,0 +1,68 @@
+# Ansible
+*.retry
+.ansible/
+ansible.log
+
+# Vault files
+vault_pass.txt
+*.vault
+!vault_pass.txt.example
+
+# Secrets and sensitive data
+**/secrets/
+**/*.key
+**/*.pem
+**/*.p12
+**/*.jks
+!**/*.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Software binaries (large files)
+software/
+!software/.gitkeep
+
+# Backup directories
+backups/
+*.backup
+
+# Local overrides
+local/
+local_*.yml
+!local/.gitkeep
+
+# Test files
+test/
+*.test.yml
+

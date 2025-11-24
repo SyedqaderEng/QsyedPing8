@@ -1,0 +1,25 @@
+---
+# Deploy Directory Services Playbook
+# Deploys all DS instances: Config Store, CTS Store, and IDRepo Store
+
+- name: Deploy Directory Services
+  hosts: directory_services
+  become: yes
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Include common role for prerequisites
+      include_role:
+        name: common
+
+  roles:
+    - role: directory-services
+      tags:
+        - ds
+        - directory-services
+
+  post_tasks:
+    - name: Display deployment summary
+      debug:
+        msg: "Directory Services deployment completed. Config Store, CTS Store, and IDRepo Store are ready."
+

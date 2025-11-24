@@ -1,0 +1,32 @@
+---
+# Identity Management (IDM) Configuration - Dev Environment
+
+# IDM Ports
+boot_port_http: 8080
+boot_port_https: 8553
+boot_port_mutualauth: 9444
+boot_host: "{{ idm_hostname }}"
+
+# IDM Repository Configuration
+idm_repo_config_file: "repo.ds.json"
+idm_external_repo_config: "{{ idm_extract_dir }}/db/ds/conf/repo.ds-external.json"
+
+# IDM Configuration Files
+idm_config_files:
+  - "repo.ds.json"
+  - "access.json"
+  - "managed.json"
+  - "authentication.json"
+  - "metrics.json"
+  - "ui-configuration.json"
+  - "ui-themerealm.json"
+  - "servletfilter-cors.json"
+  - "system.properties"
+
+# IDM Boot Properties
+idm_boot_properties:
+  openidm.port.http: "{{ boot_port_http }}"
+  openidm.port.https: "{{ boot_port_https }}"
+  openidm.port.mutualauth: "{{ boot_port_mutualauth }}"
+  openidm.host: "{{ boot_host }}"
+

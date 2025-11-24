@@ -1,0 +1,12 @@
+# Example Vault Password File
+# Copy this file to vault_pass.txt and set your Vault password
+# DO NOT commit vault_pass.txt to version control
+#
+# Usage:
+#   ansible-playbook ... --vault-password-file vault_pass.txt
+#
+# Or set environment variable:
+#   export ANSIBLE_VAULT_PASSWORD_FILE=vault_pass.txt
+
+your-vault-password-here
+

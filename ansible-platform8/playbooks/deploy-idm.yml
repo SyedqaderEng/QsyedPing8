@@ -1,0 +1,40 @@
+---
+# Deploy Identity Management Playbook
+
+- name: Deploy Identity Management
+  hosts: identity_management
+  become: yes
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Include common role for prerequisites
+      include_role:
+        name: common
+
+    - name: Verify DS IDRepo is running
+      uri:
+        url: "ldaps://{{ hostvars[groups['directory_services'][0]]['ansible_host'] }}:{{ ds_idrepo_server_ldaps_port }}"
+        method: GET
+      delegate_to: localhost
+      failed_when: false
+      changed_when: false
+
+    - name: Verify AM is running
+      uri:
+        url: "{{ am_url }}/json/serverinfo/*"
+        method: GET
+      delegate_to: localhost
+      failed_when: false
+      changed_when: false
+
+  roles:
+    - role: identity-management
+      tags:
+        - idm
+        - identity-management
+
+  post_tasks:
+    - name: Display deployment summary
+      debug:
+        msg: "Identity Management deployment completed. IDM is available at http://{{ idm_hostname }}:{{ boot_port_http }}/openidm"
+

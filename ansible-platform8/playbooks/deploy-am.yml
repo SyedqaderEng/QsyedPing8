@@ -1,0 +1,38 @@
+---
+# Deploy Access Management Playbook (DS-based mode)
+# Deploys AM with DS-based configuration
+
+- name: Deploy Access Management
+  hosts: access_management
+  become: yes
+  gather_facts: yes
+
+  pre_tasks:
+    - name: Include common role for prerequisites
+      include_role:
+        name: common
+
+    - name: Verify DS instances are running
+      uri:
+        url: "ldaps://{{ hostvars[groups['directory_services'][0]]['ansible_host'] }}:{{ ds_amconfig_server_ldaps_port }}"
+        method: GET
+      delegate_to: localhost
+      failed_when: false
+      changed_when: false
+
+  roles:
+    - role: tomcat
+      tags:
+        - tomcat
+    - role: access-management
+      vars:
+        am_deployment_mode: "ds"
+      tags:
+        - am
+        - access-management
+
+  post_tasks:
+    - name: Display deployment summary
+      debug:
+        msg: "Access Management deployment completed. AM is available at {{ am_url }}"
+

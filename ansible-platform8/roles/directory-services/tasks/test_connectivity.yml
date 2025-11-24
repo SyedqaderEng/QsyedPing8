@@ -1,0 +1,66 @@
+---
+# LDAP Connectivity Testing
+
+- name: Test DS Config Store LDAPS connection
+  shell: |
+    {{ ds_config_dir }}/opendj/bin/ldapsearch \
+      -h {{ ds_amconfig_server }} \
+      -p {{ ds_amconfig_server_ldaps_port }} \
+      -D "{{ ds_config_admin_dn }}" \
+      -w "{{ ds_config_admin_password | default(default_password) }}" \
+      -b "ou=am-config" \
+      -Z \
+      --trustStorePath "{{ am_truststore }}" \
+      "objectclass=*" \
+      dn
+  register: config_ldap_test
+  changed_when: false
+  failed_when: config_ldap_test.rc != 0
+  when: ds_config_exists.stat.exists
+
+- name: Display Config Store test result
+  debug:
+    msg: "DS Config Store LDAPS connection: SUCCESS"
+
+- name: Test DS IDRepo Store LDAPS connection
+  shell: |
+    {{ ds_idrepo_dir }}/opendj/bin/ldapsearch \
+      -h {{ ds_idrepo_server }} \
+      -p {{ ds_idrepo_server_ldaps_port }} \
+      -D "{{ ds_idrepo_admin_dn }}" \
+      -w "{{ ds_idrepo_admin_password | default(default_password) }}" \
+      -b "{{ ds_idrepo_dn }}" \
+      -Z \
+      --trustStorePath "{{ am_truststore }}" \
+      "objectclass=*" \
+      dn
+  register: idrepo_ldap_test
+  changed_when: false
+  failed_when: idrepo_ldap_test.rc != 0
+  when: ds_idrepo_exists.stat.exists
+
+- name: Display IDRepo Store test result
+  debug:
+    msg: "DS IDRepo Store LDAPS connection: SUCCESS"
+
+- name: Test DS CTS Store LDAPS connection
+  shell: |
+    {{ ds_cts_dir }}/opendj/bin/ldapsearch \
+      -h {{ ds_cts_server }} \
+      -p {{ ds_cts_server_ldaps_port }} \
+      -D "{{ ds_cts_admin_dn }}" \
+      -w "{{ ds_cts_admin_password | default(default_password) }}" \
+      -b "ou=famrecords,ou=openam-session,ou=tokens" \
+      -Z \
+      --trustStorePath "{{ am_truststore }}" \
+      "objectclass=*" \
+      dn
+  register: cts_ldap_test
+  changed_when: false
+  failed_when: cts_ldap_test.rc != 0
+  when: ds_cts_exists.stat.exists
+
+- name: Display CTS Store test result
+  debug:
+    msg: "DS CTS Store LDAPS connection: SUCCESS"
+

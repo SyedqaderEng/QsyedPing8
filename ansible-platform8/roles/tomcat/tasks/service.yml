@@ -1,0 +1,82 @@
+---
+# Tomcat Service Management
+
+- name: Check if Tomcat systemd service exists
+  stat:
+    path: /etc/systemd/system/tomcat.service
+  register: tomcat_systemd_service
+  failed_when: false
+
+- name: Check if Tomcat is running (systemd)
+  systemd:
+    name: tomcat
+    state: started
+  register: tomcat_systemd_status
+  when: tomcat_systemd_service.stat.exists
+  failed_when: false
+
+- name: Check if Tomcat process is running
+  shell: pgrep -f '[c]atalina' || true
+  register: tomcat_process
+  changed_when: false
+  failed_when: false
+
+- name: Display Tomcat status
+  debug:
+    msg: "Tomcat is {{ 'running' if (tomcat_systemd_status is defined and tomcat_systemd_status.status is defined and tomcat_systemd_status.status.ActiveState == 'active') or (tomcat_process.stdout | length > 0) else 'stopped' }}"
+
+- name: Stop Tomcat (systemd)
+  systemd:
+    name: tomcat
+    state: stopped
+  when: 
+    - tomcat_systemd_service.stat.exists
+    - tomcat_action | default('start') == 'stop'
+  register: tomcat_stop_result
+
+- name: Stop Tomcat (direct script)
+  shell: "{{ tomcat_bin_dir }}/shutdown.sh"
+  when:
+    - not tomcat_systemd_service.stat.exists
+    - tomcat_action | default('start') == 'stop'
+  failed_when: false
+  async: 10
+  poll: 2
+
+- name: Kill any remaining Tomcat processes
+  shell: pkill -9 -f '[c]atalina' || true
+  when: tomcat_action | default('start') == 'stop'
+  failed_when: false
+
+- name: Start Tomcat (systemd)
+  systemd:
+    name: tomcat
+    state: started
+    enabled: yes
+  when:
+    - tomcat_systemd_service.stat.exists
+    - tomcat_action | default('start') == 'start'
+  register: tomcat_start_result
+
+- name: Start Tomcat (direct script)
+  shell: "{{ tomcat_bin_dir }}/startup.sh"
+  when:
+    - not tomcat_systemd_service.stat.exists
+    - tomcat_action | default('start') == 'start'
+  async: 10
+  poll: 2
+
+- name: Wait for Tomcat to start
+  wait_for:
+    port: "{{ tomcat_http_port }}"
+    host: "{{ ansible_default_ipv4.address | default('localhost') }}"
+    delay: 10
+    timeout: 120
+  when: tomcat_action | default('start') == 'start'
+
+- name: Verify Tomcat is listening
+  wait_for:
+    port: "{{ tomcat_http_port }}"
+    host: "{{ ansible_default_ipv4.address | default('localhost') }}"
+  when: tomcat_action | default('start') == 'start'
+

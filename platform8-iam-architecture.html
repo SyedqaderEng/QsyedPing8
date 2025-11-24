@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform8 IAM Architecture Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .diagram-container {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+
+        .legend {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .legend h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid;
+        }
+
+        .legend-item.config-store { border-left-color: #3498db; }
+        .legend-item.cts-store { border-left-color: #9b59b6; }
+        .legend-item.idrepo-store { border-left-color: #e74c3c; }
+        .legend-item.am { border-left-color: #2ecc71; }
+        .legend-item.idm { border-left-color: #f39c12; }
+        .legend-item.ig { border-left-color: #1abc9c; }
+        .legend-item.ui { border-left-color: #e67e22; }
+
+        .legend-item strong {
+            margin-right: 10px;
+            min-width: 100px;
+        }
+
+        .description {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .description h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .description-section {
+            margin-bottom: 25px;
+        }
+
+        .description-section h3 {
+            color: #34495e;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            padding-bottom: 5px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .description-section ul {
+            margin-left: 20px;
+            line-height: 1.8;
+        }
+
+        .description-section li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .arrow-note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .arrow-note strong {
+            color: #856404;
+        }
+
+        mermaid {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Platform8 IAM Architecture</h1>
+        <p class="subtitle">Complete Deployment Architecture with Component Dependencies and Data Flow</p>
+
+        <div class="legend">
+            <h2>Component Legend</h2>
+            <div class="legend-items">
+                <div class="legend-item config-store">
+                    <strong>DS Config:</strong> Configuration Store
+                </div>
+                <div class="legend-item cts-store">
+                    <strong>DS CTS:</strong> Core Token Service
+                </div>
+                <div class="legend-item idrepo-store">
+                    <strong>DS IDRepo:</strong> Identity Repository
+                </div>
+                <div class="legend-item am">
+                    <strong>AM:</strong> Access Management
+                </div>
+                <div class="legend-item idm">
+                    <strong>IDM:</strong> Identity Management
+                </div>
+                <div class="legend-item ig">
+                    <strong>IG:</strong> Identity Gateway
+                </div>
+                <div class="legend-item ui">
+                    <strong>UI:</strong> Platform UI
+                </div>
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="mermaid">
+graph TB
+    subgraph "VM 1: Directory Services Cluster"
+        DS_CONFIG["DS Config Store<br/>Port: 3389/3636<br/>Role: AM Configuration"]
+        DS_CTS["DS CTS Store<br/>Port: 1389/1636<br/>Role: Token Storage"]
+        DS_IDREPO["DS IDRepo Store<br/>Port: 2389/2636<br/>Role: User Identities"]
+        
+        DS_CONFIG -.->|"Replication"| DS_CONFIG_REPLICA["DS Config Replica<br/>(Optional DR)"]
+        DS_CTS -.->|"Replication"| DS_CTS_REPLICA["DS CTS Replica<br/>(Optional DR)"]
+        DS_IDREPO -.->|"Replication"| DS_IDREPO_REPLICA["DS IDRepo Replica<br/>(Optional DR)"]
+    end
+
+    subgraph "VM 2: Access Management"
+        AM["PingAM<br/>Port: 8081<br/>Tomcat + AM WAR<br/>Role: AuthN/AuthZ"]
+        AMSTER["Amster<br/>Configuration Tool"]
+    end
+
+    subgraph "VM 3: Identity Management"
+        IDM["PingIDM<br/>Port: 8080/8553<br/>Role: Identity Lifecycle"]
+    end
+
+    subgraph "VM 4: Identity Gateway"
+        IG["Identity Gateway<br/>Port: 7080/9443<br/>Role: API Gateway/Proxy"]
+    end
+
+    subgraph "VM 5: Platform UI"
+        UI["Platform UI<br/>Deployed in Tomcat<br/>Role: Web Interfaces"]
+    end
+
+    %% DS to AM connections
+    DS_CONFIG -->|"Config Data<br/>(LDAPS)"| AM
+    DS_IDREPO -->|"User Store<br/>(LDAPS)"| AM
+    DS_CTS -->|"Token Storage<br/>(LDAPS)"| AM
+    AMSTER -->|"Config Import"| AM
+
+    %% DS to IDM connections
+    DS_IDREPO -->|"User Repository<br/>(LDAPS)"| IDM
+
+    %% AM to IDM connections
+    AM -->|"Authentication<br/>(OAuth2/OIDC)"| IDM
+
+    %% AM/IDM to IG connections
+    AM -->|"Auth Services<br/>(HTTP/HTTPS)"| IG
+    IDM -->|"Identity APIs<br/>(HTTP/HTTPS)"| IG
+
+    %% IG to UI connections
+    IG -->|"Routed Traffic<br/>(HTTPS)"| UI
+
+    %% External access
+    USERS["End Users"] -->|"HTTPS:9443"| IG
+    ADMINS["Administrators"] -->|"HTTPS:9443"| IG
+    CLIENTS["Applications"] -->|"OAuth2/OIDC"| AM
+
+    %% Styling
+    classDef dsConfig fill:#3498db,stroke:#2980b9,stroke-width:3px,color:#fff
+    classDef dsCts fill:#9b59b6,stroke:#8e44ad,stroke-width:3px,color:#fff
+    classDef dsIdrepo fill:#e74c3c,stroke:#c0392b,stroke-width:3px,color:#fff
+    classDef am fill:#2ecc71,stroke:#27ae60,stroke-width:3px,color:#fff
+    classDef idm fill:#f39c12,stroke:#e67e22,stroke-width:3px,color:#fff
+    classDef ig fill:#1abc9c,stroke:#16a085,stroke-width:3px,color:#fff
+    classDef ui fill:#e67e22,stroke:#d35400,stroke-width:3px,color:#fff
+    classDef external fill:#95a5a6,stroke:#7f8c8d,stroke-width:2px,color:#fff
+    classDef replica fill:#ecf0f1,stroke:#bdc3c7,stroke-width:2px,stroke-dasharray: 5 5,color:#2c3e50
+
+    class DS_CONFIG,DS_CONFIG_REPLICA dsConfig
+    class DS_CTS,DS_CTS_REPLICA dsCts
+    class DS_IDREPO,DS_IDREPO_REPLICA dsIdrepo
+    class AM,AMSTER am
+    class IDM idm
+    class IG ig
+    class UI ui
+    class USERS,ADMINS,CLIENTS external
+            </div>
+        </div>
+
+        <div class="arrow-note">
+            <strong>Arrow Legend:</strong>
+            <ul style="margin-top: 10px; margin-left: 20px;">
+                <li><strong>Solid arrows (→):</strong> Primary data flow and dependencies</li>
+                <li><strong>Dashed arrows (-.->):</strong> Replication topology (optional DR setup)</li>
+            </ul>
+        </div>
+
+        <div class="description">
+            <h2>Architecture Description</h2>
+
+            <div class="description-section">
+                <h3>VM 1: Directory Services Cluster</h3>
+                <ul>
+                    <li><strong>DS Config Store:</strong> Stores Access Management configuration data. AM reads its configuration from this instance via LDAPS (port 3636). Contains realm configurations, authentication trees, policies, and AM settings.</li>
+                    <li><strong>DS CTS Store:</strong> Core Token Service store for session and token management. AM stores OAuth2/OIDC tokens, SAML assertions, and session data here via LDAPS (port 1636). Critical for session persistence and token validation.</li>
+                    <li><strong>DS IDRepo Store:</strong> Identity Repository containing user accounts, groups, and identity data. Used by both AM (for authentication) and IDM (for identity management) via LDAPS (port 2636).</li>
+                    <li><strong>Replication:</strong> Optional disaster recovery setup where each DS instance can have replicas for high availability and data redundancy.</li>
+                </ul>
+            </div>
+
+            <div class="description-section">
+                <h3>VM 2: Access Management (PingAM)</h3>
+                <ul>
+                    <li><strong>Deployment:</strong> AM WAR file deployed in Apache Tomcat (port 8081). Requires all three DS instances to be operational.</li>
+                    <li><strong>Dependencies:</strong> Connects to DS Config Store for configuration, DS IDRepo for user authentication, and DS CTS for token/session storage.</li>
+                    <li><strong>Amster:</strong> Configuration automation tool used to import authentication trees, realms, and AM settings into the Config Store.</li>
+                    <li><strong>Functionality:</strong> Provides authentication, authorization, OAuth2/OIDC, SAML, and session management services.</li>
+                </ul>
+            </div>
+
+            <div class="description-section">
+                <h3>VM 3: Identity Management (PingIDM)</h3>
+                <ul>
+                    <li><strong>Deployment:</strong> IDM ZIP extracted and runs as standalone service (HTTP port 8080, HTTPS port 8553).</li>
+                    <li><strong>Dependencies:</strong> Requires DS IDRepo for user data storage and AM for authentication services.</li>
+                    <li><strong>Functionality:</strong> Manages identity lifecycle, user provisioning, workflows, compliance, and self-service capabilities.</li>
+                    <li><strong>Integration:</strong> Uses AM for authentication and authorization, stores identity data in DS IDRepo.</li>
+                </ul>
+            </div>
+
+            <div class="description-section">
+                <h3>VM 4: Identity Gateway (IG)</h3>
+                <ul>
+                    <li><strong>Deployment:</strong> IG ZIP extracted and runs as standalone service (HTTP port 7080, HTTPS port 9443).</li>
+                    <li><strong>Dependencies:</strong> Requires AM and IDM to be operational for routing and authentication enforcement.</li>
+                    <li><strong>Functionality:</strong> Acts as reverse proxy and API gateway. Routes traffic to AM and IDM, enforces authentication policies, and performs request/response transformation.</li>
+                    <li><strong>Routes:</strong> Configures routes for AM endpoints, IDM APIs, Platform UI, End-user UI, and Login pages.</li>
+                </ul>
+            </div>
+
+            <div class="description-section">
+                <h3>VM 5: Platform UI</h3>
+                <ul>
+                    <li><strong>Deployment:</strong> Platform UI bundle extracted and deployed into Tomcat (same instance as AM or separate).</li>
+                    <li><strong>Dependencies:</strong> Requires AM, IDM, and IG to be operational. Uses IG URLs for routing.</li>
+                    <li><strong>Components:</strong> Includes Admin Console, End-user Portal, and Login UI pages.</li>
+                    <li><strong>Access:</strong> Accessed through IG gateway at HTTPS port 9443.</li>
+                </ul>
+            </div>
+
+            <div class="description-section">
+                <h3>Deployment Order & Dependencies</h3>
+                <ul>
+                    <li><strong>Step 1:</strong> Deploy DS instances (Config, CTS, IDRepo) - Foundation layer</li>
+                    <li><strong>Step 2:</strong> Deploy AM - Requires all DS instances running</li>
+                    <li><strong>Step 3:</strong> Deploy IDM - Requires DS IDRepo and AM</li>
+                    <li><strong>Step 4:</strong> Deploy IG - Requires AM and IDM</li>
+                    <li><strong>Step 5:</strong> Deploy Platform UI - Requires AM, IDM, and IG</li>
+                </ul>
+            </div>
+
+            <div class="description-section">
+                <h3>Data Flow Summary</h3>
+                <ul>
+                    <li><strong>Configuration Flow:</strong> Amster → AM → DS Config Store (writes config)</li>
+                    <li><strong>Authentication Flow:</strong> Users → IG → AM → DS IDRepo (reads users) → DS CTS (stores sessions)</li>
+                    <li><strong>Identity Management Flow:</strong> Admins → IG → IDM → DS IDRepo (manages users) → AM (for auth)</li>
+                    <li><strong>Token Flow:</strong> Applications → AM → DS CTS (token storage/validation)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 20
+            },
+            themeVariables: {
+                primaryColor: '#3498db',
+                primaryTextColor: '#fff',
+                primaryBorderColor: '#2980b9',
+                lineColor: '#34495e',
+                secondaryColor: '#ecf0f1',
+                tertiaryColor: '#f8f9fa'
+            }
+        });
+    </script>
+</body>
+</html>

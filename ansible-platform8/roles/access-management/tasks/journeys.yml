@@ -1,0 +1,85 @@
+---
+# Authentication Journey Import
+
+- name: Check if journeys directory exists
+  stat:
+    path: "{{ am_journeys_dir }}"
+  register: journeys_dir_stat
+
+- name: Skip journey import if directory not found
+  debug:
+    msg: "Journeys directory not found at {{ am_journeys_dir }}. Skipping journey import."
+  when: not journeys_dir_stat.stat.exists
+
+- name: Import authentication journeys
+  shell: |
+    {{ amster_dir }}/amster <<EOF
+    connect -k {{ am_dir }}/security/keys/amster/amster_rsa {{ am_url }}
+    import-config --path {{ am_journeys_dir }}
+    :exit
+    EOF
+  args:
+    chdir: "{{ amster_dir }}"
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: 
+    - journeys_dir_stat.stat.exists
+    - am_deployment_mode | default('ds') == 'ds'
+  register: journey_import
+  failed_when: journey_import.rc != 0
+  changed_when: "'No changes' not in journey_import.stdout"
+
+- name: Import authentication journeys (FBC mode)
+  shell: |
+    {{ amster_dir }}/amster <<EOF
+    connect -k {{ am_fbc_dir }}/security/keys/amster/amster_rsa {{ am_url }}
+    import-config --path {{ am_journeys_dir }}
+    :exit
+    EOF
+  args:
+    chdir: "{{ amster_dir }}"
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: 
+    - journeys_dir_stat.stat.exists
+    - am_deployment_mode | default('ds') == 'fbc'
+  register: journey_import_fbc
+  failed_when: journey_import_fbc.rc != 0
+  changed_when: "'No changes' not in journey_import_fbc.stdout"
+
+- name: Create Alpha realm
+  shell: |
+    {{ amster_dir }}/amster <<EOF
+    connect -k {{ am_dir }}/security/keys/amster/amster_rsa {{ am_url }}
+    create Realms --global --body '{"_id": "L2FscGhh", "parentPath": "/", "active": true, "name": "alpha", "aliases": []}'
+    :exit
+    EOF
+  args:
+    chdir: "{{ amster_dir }}"
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: 
+    - am_deployment_mode | default('ds') == 'ds'
+    - am_realms is defined
+  register: alpha_realm
+  failed_when: alpha_realm.rc != 0 and 'already exists' not in alpha_realm.stderr
+  changed_when: alpha_realm.rc == 0 and 'already exists' not in alpha_realm.stderr
+
+- name: Create Alpha realm (FBC mode)
+  shell: |
+    {{ amster_dir }}/amster <<EOF
+    connect -k {{ am_fbc_dir }}/security/keys/amster/amster_rsa {{ am_url }}
+    create Realms --global --body '{"_id": "L2FscGhh", "parentPath": "/", "active": true, "name": "alpha", "aliases": []}'
+    :exit
+    EOF
+  args:
+    chdir: "{{ amster_dir }}"
+  environment:
+    JAVA_HOME: "{{ ansible_env.JAVA_HOME | default('/usr/lib/jvm/java-21-openjdk') }}"
+  when: 
+    - am_deployment_mode | default('ds') == 'fbc'
+    - am_realms is defined
+  register: alpha_realm_fbc
+  failed_when: alpha_realm_fbc.rc != 0 and 'already exists' not in alpha_realm_fbc.stderr
+  changed_when: alpha_realm_fbc.rc == 0 and 'already exists' not in alpha_realm_fbc.stderr
+

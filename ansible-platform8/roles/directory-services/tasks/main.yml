@@ -1,0 +1,12 @@
+---
+# Directory Services Role - Main Tasks
+
+- name: Include installation tasks
+  include_tasks: install.yml
+
+- name: Include certificate management
+  include_tasks: certificates.yml
+
+- name: Include connectivity testing
+  include_tasks: test_connectivity.yml
+

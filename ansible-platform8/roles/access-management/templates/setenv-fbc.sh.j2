@@ -1,0 +1,21 @@
+#!/bin/bash
+CATALINA_OPTS="\
+  -Dcom.sun.identity.sm.sms_object_filebased_enabled=true \
+  -Dam.server.fqdn={{ am_hostname }} \
+  -Dam.stores.user.servers={{ ds_idrepo_server }}:{{ ds_idrepo_server_ldaps_port }} \
+  -Dam.stores.user.username={{ ds_idrepo_admin_dn }} \
+  -Dam.stores.user.password={{ ds_idrepo_admin_password | default(default_password) }} \
+  -Dam.test.mode=true \
+  -Dam.stores.application.servers={{ ds_amconfig_server }}:{{ ds_amconfig_server_ldaps_port }} \
+  -Dam.stores.application.password={{ ds_config_admin_password | default(default_password) }} \
+  -Djavax.net.ssl.trustStore={{ am_truststore }} \
+  -Djavax.net.ssl.trustStorePassword={{ truststore_password }} \
+  -Djavax.net.ssl.trustStoreType=jks \
+  -Dam.stores.cts.servers={{ ds_cts_server }}:{{ ds_cts_server_ldaps_port }} \
+  -Dam.stores.cts.password={{ ds_cts_admin_password | default(default_password) }} \
+  -server \
+  -Xmx2g \
+  -XX:MetaspaceSize=256m \
+  -XX:MaxMetaspaceSize=256m"
+export CATALINA_OPTS
+
